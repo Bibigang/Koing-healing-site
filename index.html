@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>돼지 힐링 🐷</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      background: #87CEEB;
+    }
+    canvas {
+      display: block;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => {
+  resize();
+  pig.resetAt(W / 2);
+});
+
+// ── Physics constants ──────────────────────────────────────
+const N = 24;
+const K_RESTORE = 0.15;
+const K_NEIGHBOR = 0.07;
+const DAMPING = 0.74;
+const MAX_DEFORM = 1.7;
+
+// ── Helpers ───────────────────────────────────────────────
+function lerpColor(c1, c2, t) {
+  t = Math.max(0, Math.min(1, t));
+  const p = (c, s) => parseInt(c.slice(s, s+2), 16);
+  const mix = (a, b) => Math.round(a + (b - a) * t).toString(16).padStart(2, '0');
+  return `#${mix(p(c1,1),p(c2,1))}${mix(p(c1,3),p(c2,3))}${mix(p(c1,5),p(c2,5))}`;
+}
+
+function smoothPath(ctx, pts) {
+  const n = pts.length;
+  ctx.moveTo((pts[n-1].x + pts[0].x) / 2, (pts[n-1].y + pts[0].y) / 2);
+  for (let i = 0; i < n; i++) {
+    const c = pts[i], nx = pts[(i+1) % n];
+    ctx.quadraticCurveTo(c.x, c.y, (c.x+nx.x)/2, (c.y+nx.y)/2);
+  }
+  ctx.closePath();
+}
+
+// ── Pig ───────────────────────────────────────────────────
+class Pig {
+  resetAt(x) {
+    this.r = Math.min(W, H) * 0.16;
+    this.cx = x;
+    this.cy = H * 0.6 - this.r;
+    this.neighborRest = (2 * Math.PI * this.r) / N;
+    this.pts = Array.from({ length: N }, (_, i) => {
+      const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+      const ox = Math.cos(a) * this.r;
+      const oy = Math.sin(a) * this.r;
+      return { x: this.cx + ox, y: this.cy + oy, vx: 0, vy: 0, ox, oy };
+    });
+    this.dragIdx = -1;
+    this.active = false;
+  }
+
+  constructor(x) { this.resetAt(x); }
+
+  stress() {
+    return this.pts.reduce((sum, p) => {
+      return sum + Math.hypot(p.x - (this.cx + p.ox), p.y - (this.cy + p.oy));
+    }, 0) / (N * this.r);
+  }
+
+  update() {
+    for (let i = 0; i < N; i++) {
+      const p = this.pts[i];
+      if (this.active && i === this.dragIdx) continue;
+
+      const prev = this.pts[(i - 1 + N) % N];
+      const next = this.pts[(i + 1) % N];
+
+      // Restore to original shape
+      let fx = (this.cx + p.ox - p.x) * K_RESTORE;
+      let fy = (this.cy + p.oy - p.y) * K_RESTORE;
+
+      // Neighbor springs (keeps outline smooth)
+      for (const nb of [prev, next]) {
+        const dx = nb.x - p.x, dy = nb.y - p.y;
+        const d = Math.hypot(dx, dy) || 0.001;
+        const f = (d - this.neighborRest) * K_NEIGHBOR;
+        fx += (dx / d) * f;
+        fy += (dy / d) * f;
+      }
+
+      p.vx = (p.vx + fx) * DAMPING;
+      p.vy = (p.vy + fy) * DAMPING;
+      p.x += p.vx;
+      p.y += p.vy;
+    }
+  }
+
+  pointerDown(x, y) {
+    if (Math.hypot(x - this.cx, y - this.cy) > this.r * 1.5) return false;
+    let best = Infinity;
+    this.pts.forEach((p, i) => {
+      const d = Math.hypot(x - p.x, y - p.y);
+      if (d < best) { best = d; this.dragIdx = i; }
+    });
+    this.active = true;
+    return true;
+  }
+
+  pointerMove(x, y) {
+    if (!this.active) return;
+    const p = this.pts[this.dragIdx];
+
+    // Constrain max deformation
+    const rx = this.cx + p.ox, ry = this.cy + p.oy;
+    const dx = x - rx, dy = y - ry;
+    const d = Math.hypot(dx, dy);
+    const maxD = this.r * MAX_DEFORM;
+    if (d > maxD) { x = rx + dx/d * maxD; y = ry + dy/d * maxD; }
+
+    p.x = x; p.y = y; p.vx = 0; p.vy = 0;
+
+    // Ripple force to neighbors
+    for (let spread = 1; spread <= 3; spread++) {
+      const fac = Math.pow(0.45, spread) * 0.18;
+      for (const sign of [1, -1]) {
+        const ni = (this.dragIdx + sign * spread + N) % N;
+        this.pts[ni].vx += (x - this.pts[ni].x) * fac;
+        this.pts[ni].vy += (y - this.pts[ni].y) * fac;
+      }
+    }
+  }
+
+  pointerUp() { this.active = false; this.dragIdx = -1; }
+
+  draw(ctx) {
+    const s = this.stress();
+    const bodyColor = lerpColor('#FFB3C6', '#FF5577', Math.min(s / 0.5, 1));
+    const strokeColor = lerpColor('#E896A8', '#CC3355', Math.min(s / 0.5, 1));
+
+    // Ears behind body
+    this._drawEar(ctx, this.cx - this.r * 0.42, this.cy - this.r * 0.72);
+    this._drawEar(ctx, this.cx + this.r * 0.42, this.cy - this.r * 0.72);
+
+    // Body shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(80,0,30,0.18)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 10;
+    ctx.beginPath();
+    smoothPath(ctx, this.pts);
+    ctx.fillStyle = bodyColor;
+    ctx.fill();
+    ctx.restore();
+
+    // Body stroke
+    ctx.beginPath();
+    smoothPath(ctx, this.pts);
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    this._drawFace(ctx, s);
+  }
+
+  _drawEar(ctx, x, y) {
+    const r = this.r * 0.22;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFAAC4';
+    ctx.fill();
+    ctx.strokeStyle = '#E896A8';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF8FAE';
+    ctx.fill();
+  }
+
+  _drawFace(ctx, s) {
+    const { cx, cy, r } = this;
+
+    // Blush
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#FF7799';
+    ctx.beginPath();
+    ctx.ellipse(cx - r*0.46, cy + r*0.04, r*0.17, r*0.1, -0.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + r*0.46, cy + r*0.04, r*0.17, r*0.1, 0.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Snout
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r*0.2, r*0.33, r*0.23, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#FFB3C6';
+    ctx.fill();
+    ctx.strokeStyle = '#E896A8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Nostrils
+    ctx.fillStyle = '#BB5570';
+    ctx.beginPath();
+    ctx.ellipse(cx - r*0.12, cy + r*0.2, r*0.055, r*0.075, -0.2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + r*0.12, cy + r*0.2, r*0.055, r*0.075, 0.2, 0, Math.PI*2);
+    ctx.fill();
+
+    this._drawEyes(ctx, s);
+    this._drawMouth(ctx, s);
+  }
+
+  _drawEyes(ctx, s) {
+    const { cx, cy, r } = this;
+    const ey = cy - r * 0.1;
+    const ex = r * 0.27;
+    const er = r * 0.1;
+
+    ctx.save();
+    ctx.lineWidth = Math.max(2.5, r * 0.038);
+    ctx.lineCap = 'round';
+
+    if (s < 0.08) {
+      // Happy: ^ ^ eyes
+      ctx.strokeStyle = '#442233';
+      for (const sign of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(cx + sign*ex, ey + er*0.5, er, Math.PI + 0.25, -0.25, false);
+        ctx.stroke();
+      }
+    } else if (s < 0.35) {
+      // Surprised: O O
+      for (const sign of [-1, 1]) {
+        ctx.fillStyle = '#442233';
+        ctx.beginPath();
+        ctx.arc(cx + sign*ex, ey, er, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(cx + sign*ex + er*0.3, ey - er*0.3, er*0.35, 0, Math.PI*2);
+        ctx.fill();
+      }
+    } else {
+      // Distressed: × ×
+      ctx.strokeStyle = '#442233';
+      for (const sign of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + sign*ex - er, ey - er*0.5);
+        ctx.lineTo(cx + sign*ex + er, ey + er*0.5);
+        ctx.moveTo(cx + sign*ex + er, ey - er*0.5);
+        ctx.lineTo(cx + sign*ex - er, ey + er*0.5);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  _drawMouth(ctx, s) {
+    const { cx, cy, r } = this;
+    const my = cy + r * 0.44;
+    ctx.save();
+    ctx.strokeStyle = '#BB5570';
+    ctx.lineWidth = Math.max(2, r * 0.03);
+    ctx.lineCap = 'round';
+
+    if (s < 0.08) {
+      // Smile
+      ctx.beginPath();
+      ctx.arc(cx, my - r*0.02, r*0.1, 0.15, Math.PI - 0.15);
+      ctx.stroke();
+    } else if (s < 0.35) {
+      // O mouth
+      ctx.fillStyle = '#BB5570';
+      ctx.beginPath();
+      ctx.arc(cx, my, r*0.065, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      // Wavy distress
+      ctx.beginPath();
+      ctx.moveTo(cx - r*0.1, my);
+      ctx.quadraticCurveTo(cx - r*0.03, my + r*0.06, cx, my - r*0.01);
+      ctx.quadraticCurveTo(cx + r*0.03, my - r*0.07, cx + r*0.1, my + r*0.01);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ── Background ────────────────────────────────────────────
+function drawBg() {
+  // Sky
+  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62);
+  sky.addColorStop(0, '#87CEEB');
+  sky.addColorStop(1, '#C5E8F5');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grass
+  const gy = H * 0.6;
+  const grass = ctx.createLinearGradient(0, gy, 0, H);
+  grass.addColorStop(0, '#88C34A');
+  grass.addColorStop(1, '#4E8A20');
+  ctx.fillStyle = grass;
+  ctx.fillRect(0, gy, W, H - gy);
+
+  // Ground shadow under pig
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = '#2A5000';
+  ctx.beginPath();
+  ctx.ellipse(W/2, gy + H*0.015, W*0.11, H*0.018, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Init + input ──────────────────────────────────────────
+const pig = new Pig(W / 2);
+
+function getXY(e) {
+  const t = e.changedTouches ? e.changedTouches[0] : e;
+  return [t.clientX, t.clientY];
+}
+
+canvas.addEventListener('mousedown', e => pig.pointerDown(...getXY(e)));
+canvas.addEventListener('mousemove', e => pig.pointerMove(...getXY(e)));
+canvas.addEventListener('mouseup', () => pig.pointerUp());
+canvas.addEventListener('mouseleave', () => pig.pointerUp());
+canvas.addEventListener('touchstart', e => { e.preventDefault(); pig.pointerDown(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); pig.pointerMove(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); pig.pointerUp(); }, { passive: false });
+
+// ── Loop ──────────────────────────────────────────────────
+(function loop() {
+  requestAnimationFrame(loop);
+  ctx.clearRect(0, 0, W, H);
+  drawBg();
+  pig.update();
+  pig.draw(ctx);
+})();
+</script>
+</body>
+</html>
