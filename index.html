@@ -79,6 +79,7 @@ class Pig {
     });
     this.dragIdx = -1;
     this.active = false;
+    this.petLevel = 0;
   }
 
   constructor(x) { this.resetAt(x); }
@@ -128,6 +129,7 @@ class Pig {
   }
 
   update() {
+    this.petLevel = Math.max(0, this.petLevel - 0.012); // 천천히 식음
     this.updateCenter();
     for (let i = 0; i < N; i++) {
       const p = this.pts[i];
@@ -269,8 +271,8 @@ class Pig {
   _drawFace(ctx, s) {
     const { cx, cy, r } = this;
 
-    // Blush
-    ctx.globalAlpha = 0.3;
+    // Blush — 쓰다듬을수록 더 발그레
+    ctx.globalAlpha = 0.3 + this.petLevel * 0.5;
     ctx.fillStyle = '#FF7799';
     ctx.beginPath();
     ctx.ellipse(cx - r*0.46, cy + r*0.04, r*0.17, r*0.1, -0.3, 0, Math.PI*2);
@@ -315,7 +317,17 @@ class Pig {
     // 먹는 중이면 무조건 행복 표정
     if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
 
-    if (s < 0.08) {
+    if (this.petLevel > 0.3) {
+      // 황홀 표정: 눈이 스르르 감김
+      ctx.strokeStyle = '#442233';
+      const squint = Math.min((this.petLevel - 0.3) / 0.7, 1);
+      const openAngle = 0.25 + squint * 0.55;
+      for (const sign of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(cx + sign*ex, ey + er*0.6, er * (1 + squint*0.3), Math.PI + openAngle, -openAngle, false);
+        ctx.stroke();
+      }
+    } else if (s < 0.08) {
       // Happy: ^ ^ eyes
       ctx.strokeStyle = '#442233';
       for (const sign of [-1, 1]) {
@@ -708,6 +720,20 @@ function getXY(e) {
 
 let draggedFood = null;
 let draggedAcc  = null;
+let lastPetX    = null;
+
+function checkPetting(x, y) {
+  // 이마 중앙 영역: 머리 위쪽 중심부
+  const foreheadX = pig.cx;
+  const foreheadY = pig.cy - pig.r * 0.55;
+  if (Math.hypot(x - foreheadX, y - foreheadY) < pig.r * 0.45) {
+    const moved = lastPetX !== null ? Math.abs(x - lastPetX) : 0;
+    if (moved > 3) pig.petLevel = Math.min(1, pig.petLevel + 0.055);
+    lastPetX = x;
+  } else {
+    lastPetX = null;
+  }
+}
 
 function onDown(x, y) {
   // 악세서리 먼저
@@ -722,6 +748,7 @@ function onDown(x, y) {
 }
 
 function onMove(x, y) {
+  checkPetting(x, y);
   if (draggedAcc) {
     draggedAcc.moveTo(x, y);
   } else if (draggedFood) {
