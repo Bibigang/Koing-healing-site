@@ -324,13 +324,12 @@ class Pig {
       const squint = Math.min((this.petLevel - 0.3) / 0.7, 1);
       for (const sign of [-1, 1]) {
         const eyeCx = cx + sign * ex;
-        // 위쪽 호 (눈꺼풀 윗선)
+        // 두 호를 path로 이어서 꽉 찬 초승달로 채우기
         ctx.beginPath();
         ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * (0.35 + squint * 0.25), 0, Math.PI, 0, true);
-        ctx.stroke();
-        // 아랫선 (얇은 곡선)
-        ctx.beginPath();
-        ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * 0.15, 0, 0, Math.PI, false);
+        ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * 0.15, 0, 0, Math.PI, true);
+        ctx.fillStyle = '#442233';
+        ctx.fill();
         ctx.stroke();
         // 속눈썹 3줄 (아랫선에서 아래로 뻗음 — 왼쪽 가장자리, 중앙, 오른쪽 가장자리)
         const lashW = er * (1.1 + squint * 0.4);
