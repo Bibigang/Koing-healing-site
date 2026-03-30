@@ -36,6 +36,11 @@ resize();
 window.addEventListener('resize', () => {
   resize();
   pig.resetAt(W / 2);
+  if (typeof foods !== 'undefined') {
+    foods[0].rx = W * 0.18; foods[0].ry = H * 0.78;
+    foods[1].rx = W * 0.82; foods[1].ry = H * 0.78;
+    foods.forEach(f => { if (!f.dragging) { f.x = f.rx; f.y = f.ry; } });
+  }
 });
 
 // ── Influence (고정값) ────────────────────────────────────
@@ -174,9 +179,7 @@ class Pig {
   }
 
   jiggle() {
-    // 위로 튀어오르기
     this.vcy = -this.r * 0.13;
-    // 몸통 뭉글뭉글
     for (const p of this.pts) {
       const ax = p.ox / (Math.hypot(p.ox, p.oy) || 1);
       const ay = p.oy / (Math.hypot(p.ox, p.oy) || 1);
@@ -184,6 +187,11 @@ class Pig {
       p.vx += ax * power + (Math.random() - 0.5) * power * 0.6;
       p.vy += ay * power + (Math.random() - 0.5) * power * 0.6;
     }
+  }
+
+  eat() {
+    this.eatTimer = 100; // 먹고 나서 행복한 표정 유지 시간
+    this.jiggle();
   }
 
   pointerMove(x, y) {
@@ -313,6 +321,9 @@ class Pig {
     ctx.lineWidth = Math.max(2.5, r * 0.038);
     ctx.lineCap = 'round';
 
+    // 먹는 중이면 무조건 행복 표정
+    if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
+
     if (s < 0.08) {
       // Happy: ^ ^ eyes
       ctx.strokeStyle = '#442233';
@@ -379,6 +390,129 @@ class Pig {
   }
 }
 
+// ── Food ──────────────────────────────────────────────────
+class Food {
+  constructor(type, rx, ry) {
+    this.type = type;
+    this.rx = rx; this.ry = ry; // 원래 위치
+    this.x = rx; this.y = ry;
+    this.dragging = false;
+    this.eaten = false;
+    this.respawn = 0;
+  }
+
+  get size() { return Math.min(W, H) * 0.07; }
+
+  hitTest(mx, my) {
+    return !this.eaten && Math.hypot(mx - this.x, my - this.y) < this.size * 0.85;
+  }
+
+  update() {
+    if (this.eaten) {
+      this.respawn--;
+      if (this.respawn <= 0) {
+        this.eaten = false;
+        this.x = this.rx; this.y = this.ry;
+      }
+    }
+  }
+
+  startDrag() { this.dragging = true; }
+  moveTo(x, y) { if (this.dragging) { this.x = x; this.y = y; } }
+  endDrag() {
+    this.dragging = false;
+    if (!this.eaten) { this.x = this.rx; this.y = this.ry; }
+  }
+  markEaten() {
+    this.eaten = true;
+    this.dragging = false;
+    this.respawn = 180; // 3초 후 부활
+  }
+
+  draw(ctx) {
+    if (this.eaten) return;
+    const { x, y, size: s } = this;
+    if (this.type === 'cupcake') this._drawCupcake(ctx, x, y, s);
+    else this._drawWater(ctx, x, y, s);
+  }
+
+  _drawCupcake(ctx, x, y, s) {
+    // 컵 아랫부분
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.38, y - s*0.05);
+    ctx.lineTo(x - s*0.28, y + s*0.45);
+    ctx.lineTo(x + s*0.28, y + s*0.45);
+    ctx.lineTo(x + s*0.38, y - s*0.05);
+    ctx.closePath();
+    ctx.fillStyle = '#C4854A';
+    ctx.fill();
+    // 줄무늬
+    ctx.strokeStyle = '#A8683A';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.1, y - s*0.05);
+    ctx.lineTo(x - s*0.05, y + s*0.45);
+    ctx.moveTo(x + s*0.1, y - s*0.05);
+    ctx.lineTo(x + s*0.05, y + s*0.45);
+    ctx.stroke();
+    // 크림
+    ctx.beginPath();
+    ctx.arc(x, y - s*0.18, s*0.4, 0, Math.PI*2);
+    ctx.fillStyle = '#FFDDEE';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y - s*0.38, s*0.26, 0, Math.PI*2);
+    ctx.fillStyle = '#FFB3CC';
+    ctx.fill();
+    // 체리
+    ctx.beginPath();
+    ctx.arc(x, y - s*0.62, s*0.12, 0, Math.PI*2);
+    ctx.fillStyle = '#EE2244';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x, y - s*0.5);
+    ctx.quadraticCurveTo(x + s*0.12, y - s*0.6, x + s*0.08, y - s*0.7);
+    ctx.strokeStyle = '#55AA55';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  _drawWater(ctx, x, y, s) {
+    // 컵 모양
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.32, y - s*0.42);
+    ctx.lineTo(x - s*0.38, y + s*0.42);
+    ctx.lineTo(x + s*0.38, y + s*0.42);
+    ctx.lineTo(x + s*0.32, y - s*0.42);
+    ctx.closePath();
+    ctx.fillStyle = '#E8F8FF';
+    ctx.fill();
+    ctx.strokeStyle = '#88CCEE';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // 물 (파란 부분)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.32, y - s*0.42);
+    ctx.lineTo(x - s*0.38, y + s*0.42);
+    ctx.lineTo(x + s*0.38, y + s*0.42);
+    ctx.lineTo(x + s*0.32, y - s*0.42);
+    ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = '#55AAFF';
+    ctx.globalAlpha = 0.45;
+    ctx.fillRect(x - s*0.4, y + s*0.0, s*0.8, s*0.5);
+    ctx.restore();
+    // 빨대
+    ctx.beginPath();
+    ctx.moveTo(x + s*0.15, y - s*0.42);
+    ctx.lineTo(x + s*0.25, y - s*0.85);
+    ctx.strokeStyle = '#FF8899';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+}
+
 // ── Background ────────────────────────────────────────────
 function drawBg() {
   // Sky
@@ -406,27 +540,61 @@ function drawBg() {
   ctx.restore();
 }
 
-// ── Init + input ──────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────
 const pig = new Pig(W / 2);
+const foods = [
+  new Food('cupcake', W * 0.18, H * 0.78),
+  new Food('water',   W * 0.82, H * 0.78),
+];
 
 function getXY(e) {
   const t = e.changedTouches ? e.changedTouches[0] : e;
   return [t.clientX, t.clientY];
 }
 
-canvas.addEventListener('mousedown', e => pig.pointerDown(...getXY(e)));
-canvas.addEventListener('mousemove', e => pig.pointerMove(...getXY(e)));
-canvas.addEventListener('mouseup', e => pig.pointerUp(...getXY(e)));
-canvas.addEventListener('mouseleave', () => pig.pointerUp());
-canvas.addEventListener('touchstart', e => { e.preventDefault(); pig.pointerDown(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); pig.pointerMove(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); pig.pointerUp(...getXY(e)); }, { passive: false });
+let draggedFood = null;
+
+function onDown(x, y) {
+  for (const f of foods) {
+    if (f.hitTest(x, y)) { draggedFood = f; f.startDrag(); return; }
+  }
+  pig.pointerDown(x, y);
+}
+
+function onMove(x, y) {
+  if (draggedFood) {
+    draggedFood.moveTo(x, y);
+    // 돼지 주둥이 근처에 가져다 대면 먹기
+    const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
+    if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
+      draggedFood.markEaten();
+      pig.eat();
+      draggedFood = null;
+    }
+  } else {
+    pig.pointerMove(x, y);
+  }
+}
+
+function onUp(x, y) {
+  if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
+  else pig.pointerUp(x, y);
+}
+
+canvas.addEventListener('mousedown', e => onDown(...getXY(e)));
+canvas.addEventListener('mousemove', e => onMove(...getXY(e)));
+canvas.addEventListener('mouseup', e => onUp(...getXY(e)));
+canvas.addEventListener('mouseleave', () => { if (draggedFood) { draggedFood.endDrag(); draggedFood = null; } else pig.pointerUp(); });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); onMove(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); onUp(...getXY(e)); }, { passive: false });
 
 // ── Loop ──────────────────────────────────────────────────
 (function loop() {
   requestAnimationFrame(loop);
   ctx.clearRect(0, 0, W, H);
   drawBg();
+  foods.forEach(f => { f.update(); f.draw(ctx); });
   pig.update();
   pig.draw(ctx);
 })();
