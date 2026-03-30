@@ -33,15 +33,6 @@ function resize() {
   H = canvas.height = window.innerHeight;
 }
 resize();
-window.addEventListener('resize', () => {
-  resize();
-  pig.resetAt(W / 2);
-  if (typeof foods !== 'undefined') {
-    foods[0].rx = W * 0.18; foods[0].ry = H * 0.78;
-    foods[1].rx = W * 0.82; foods[1].ry = H * 0.78;
-    foods.forEach(f => { if (!f.dragging) { f.x = f.rx; f.y = f.ry; } });
-  }
-});
 
 // ── Influence (고정값) ────────────────────────────────────
 const influenceValue = 0.4;
@@ -519,6 +510,158 @@ class Food {
   }
 }
 
+// ── Accessory ─────────────────────────────────────────────
+class Accessory {
+  constructor(type, idx) {
+    this.type = type;
+    this.idx  = idx;
+    this.worn = false;
+    this.wornSide = 'right';
+    this.dragging = false;
+    this.x = 0; this.y = 0;
+    this._syncPanel();
+  }
+
+  _syncPanel() {
+    const pw = Math.min(W * 0.13, 72);
+    this.panelX = 8 + pw / 2;
+    this.panelY = H * 0.09 + this.idx * H * 0.13;
+    if (!this.worn && !this.dragging) { this.x = this.panelX; this.y = this.panelY; }
+  }
+
+  get _panelS() { return Math.min(W * 0.08, 50); }
+  get _wornS()  {
+    const r = pig.r;
+    if (this.type === 'crown')   return r * 0.65;
+    if (this.type === 'ribbon')  return r * 0.42;
+    return r * 0.78; // glasses
+  }
+
+  _wornPos() {
+    const { cx, cy, r } = pig;
+    if (this.type === 'crown')  return { x: cx, y: cy - r * 1.18 };
+    if (this.type === 'ribbon') {
+      const sign = this.wornSide === 'left' ? -1 : 1;
+      return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
+    }
+    return { x: cx, y: cy - r * 0.08 }; // glasses
+  }
+
+  hitTest(mx, my) {
+    const { x, y } = this.worn ? this._wornPos() : this;
+    const s = this.worn ? this._wornS : this._panelS;
+    return Math.hypot(mx - x, my - y) < s * 0.85;
+  }
+
+  startDrag() {
+    if (this.worn) { const p = this._wornPos(); this.x = p.x; this.y = p.y; this.worn = false; }
+    this.dragging = true;
+  }
+
+  moveTo(x, y) { if (this.dragging) { this.x = x; this.y = y; } }
+
+  endDrag() {
+    this.dragging = false;
+    if (Math.hypot(this.x - pig.cx, this.y - pig.cy) < pig.r * 1.8) {
+      this.worn = true;
+      if (this.type === 'ribbon') {
+        const dl = Math.hypot(this.x - (pig.cx - pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
+        const dr = Math.hypot(this.x - (pig.cx + pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
+        this.wornSide = dl < dr ? 'left' : 'right';
+      }
+    } else {
+      this.worn = false; this.x = this.panelX; this.y = this.panelY;
+    }
+  }
+
+  draw(ctx) {
+    const { x, y } = this.worn ? this._wornPos() : this;
+    const s = this.worn ? this._wornS : this._panelS;
+    if (this.type === 'crown')   this._crown(ctx, x, y, s);
+    else if (this.type === 'ribbon') this._ribbon(ctx, x, y, s);
+    else                         this._glasses(ctx, x, y, s);
+  }
+
+  _crown(ctx, x, y, s) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.5, y + s*0.35);
+    ctx.lineTo(x - s*0.5, y + s*0.05);
+    ctx.lineTo(x - s*0.15, y - s*0.38);
+    ctx.lineTo(x,          y - s*0.62);
+    ctx.lineTo(x + s*0.15, y - s*0.38);
+    ctx.lineTo(x + s*0.5,  y + s*0.05);
+    ctx.lineTo(x + s*0.5,  y + s*0.35);
+    ctx.closePath();
+    ctx.fillStyle = '#FFD700';
+    ctx.fill();
+    ctx.strokeStyle = '#BF9B00';
+    ctx.lineWidth = Math.max(1.5, s * 0.04);
+    ctx.stroke();
+    for (const [gx, gy, gc] of [
+      [x,          y - s*0.57, '#FF99CC'],
+      [x - s*0.28, y + s*0.0,  '#99DDFF'],
+      [x + s*0.28, y + s*0.0,  '#AAFFAA'],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(gx, gy, Math.max(2, s*0.1), 0, Math.PI*2);
+      ctx.fillStyle = gc; ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  _ribbon(ctx, x, y, s) {
+    ctx.save();
+    ctx.lineWidth = Math.max(1.5, s * 0.04);
+    for (const sign of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x + sign*s*0.15, y - s*0.45, x + sign*s*0.6, y - s*0.3, x + sign*s*0.55, y);
+      ctx.bezierCurveTo(x + sign*s*0.6,  y + s*0.3,  x + sign*s*0.15, y + s*0.45, x, y);
+      ctx.fillStyle = '#FF1493'; ctx.fill();
+      ctx.strokeStyle = '#CC0066'; ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, s*0.13, 0, Math.PI*2);
+    ctx.fillStyle = '#FF55AA'; ctx.fill();
+    ctx.strokeStyle = '#CC0066'; ctx.stroke();
+    ctx.restore();
+  }
+
+  _glasses(ctx, x, y, s) {
+    ctx.save();
+    const fw = s*0.42, fh = s*0.32, gap = s*0.12, rad = Math.max(2, s*0.06);
+    ctx.lineWidth = Math.max(2, s*0.06);
+    ctx.strokeStyle = '#55AADD';
+    ctx.fillStyle = 'rgba(135,206,235,0.28)';
+    // 왼쪽 렌즈
+    ctx.beginPath(); ctx.roundRect(x - gap - fw, y - fh/2, fw, fh, rad); ctx.fill(); ctx.stroke();
+    // 오른쪽 렌즈
+    ctx.beginPath(); ctx.roundRect(x + gap, y - fh/2, fw, fh, rad); ctx.fill(); ctx.stroke();
+    // 브릿지
+    ctx.beginPath(); ctx.moveTo(x - gap, y + fh*0.05); ctx.lineTo(x + gap, y + fh*0.05); ctx.stroke();
+    // 안경다리
+    ctx.beginPath();
+    ctx.moveTo(x - gap - fw, y + fh*0.05); ctx.lineTo(x - gap - fw - s*0.22, y + fh*0.18);
+    ctx.moveTo(x + gap + fw, y + fh*0.05); ctx.lineTo(x + gap + fw + s*0.22, y + fh*0.18);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawAccessoryPanel() {
+  const pw = Math.min(W * 0.13, 72);
+  const ph = H * 0.38;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,240,250,0.62)';
+  ctx.strokeStyle = 'rgba(255,175,210,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(8, H * 0.04, pw, ph, 18);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
 // ── Background ────────────────────────────────────────────
 function drawBg() {
   // Sky
@@ -552,6 +695,11 @@ const foods = [
   new Food('cupcake', W * 0.18, H * 0.78),
   new Food('water',   W * 0.82, H * 0.78),
 ];
+const accessories = [
+  new Accessory('crown',   0),
+  new Accessory('ribbon',  1),
+  new Accessory('glasses', 2),
+];
 
 function getXY(e) {
   const t = e.changedTouches ? e.changedTouches[0] : e;
@@ -559,8 +707,14 @@ function getXY(e) {
 }
 
 let draggedFood = null;
+let draggedAcc  = null;
 
 function onDown(x, y) {
+  // 악세서리 먼저
+  for (const a of accessories) {
+    if (a.hitTest(x, y)) { draggedAcc = a; a.startDrag(); return; }
+  }
+  // 음식
   for (const f of foods) {
     if (f.hitTest(x, y)) { draggedFood = f; f.startDrag(); return; }
   }
@@ -568,14 +722,13 @@ function onDown(x, y) {
 }
 
 function onMove(x, y) {
-  if (draggedFood) {
+  if (draggedAcc) {
+    draggedAcc.moveTo(x, y);
+  } else if (draggedFood) {
     draggedFood.moveTo(x, y);
-    // 돼지 주둥이 근처에 가져다 대면 먹기
     const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
     if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
-      draggedFood.markEaten();
-      pig.eat();
-      draggedFood = null;
+      draggedFood.markEaten(); pig.eat(); draggedFood = null;
     }
   } else {
     pig.pointerMove(x, y);
@@ -583,35 +736,58 @@ function onMove(x, y) {
 }
 
 function onUp(x, y) {
-  if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
+  if (draggedAcc)  { draggedAcc.endDrag(); draggedAcc = null; }
+  else if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
   else pig.pointerUp(x, y);
 }
 
 canvas.addEventListener('mousedown', e => onDown(...getXY(e)));
 canvas.addEventListener('mousemove', e => onMove(...getXY(e)));
 canvas.addEventListener('mouseup', e => onUp(...getXY(e)));
-canvas.addEventListener('mouseleave', () => { if (draggedFood) { draggedFood.endDrag(); draggedFood = null; } else pig.pointerUp(); });
+canvas.addEventListener('mouseleave', () => {
+  if (draggedAcc)  { draggedAcc.endDrag();  draggedAcc = null; }
+  if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
+  pig.pointerUp();
+});
 canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); onMove(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); onUp(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); onMove(...getXY(e)); }, { passive: false });
+canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(...getXY(e));   }, { passive: false });
+
+// ── resize 시 악세서리 패널 위치 갱신 ─────────────────────
+window.addEventListener('resize', () => {
+  resize();
+  pig.resetAt(W / 2);
+  if (typeof foods !== 'undefined') {
+    foods[0].rx = W*0.18; foods[0].ry = H*0.78;
+    foods[1].rx = W*0.82; foods[1].ry = H*0.78;
+    foods.forEach(f => { if (!f.dragging) { f.x = f.rx; f.y = f.ry; } });
+  }
+  if (typeof accessories !== 'undefined') {
+    accessories.forEach(a => a._syncPanel());
+  }
+});
 
 // ── Loop ──────────────────────────────────────────────────
 (function loop() {
   requestAnimationFrame(loop);
   ctx.clearRect(0, 0, W, H);
   drawBg();
+  drawAccessoryPanel();
 
   foods.forEach(f => f.update());
   pig.update();
 
-  // 돼지 뒤에 그려지는 음식 (바닥에 놓인 것)
+  // 패널 악세서리 (돼지 뒤)
+  accessories.forEach(a => { if (!a.worn && a !== draggedAcc) a.draw(ctx); });
+  // 바닥 음식 (돼지 뒤)
   foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
-
   // 돼지
   pig.draw(ctx);
-
-  // 돼지 앞에 그려지는 음식 (드래그 중인 것)
+  // 착용 악세서리 (돼지 위)
+  accessories.forEach(a => { if (a.worn && a !== draggedAcc) a.draw(ctx); });
+  // 드래그 중인 것들 (최상위)
   if (draggedFood) draggedFood.draw(ctx);
+  if (draggedAcc)  draggedAcc.draw(ctx);
 })();
 </script>
 </body>
