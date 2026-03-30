@@ -120,7 +120,9 @@ class Pig {
   resetAt(x) {
     this.r = Math.min(W, H) * 0.16;
     this.cx = x;
-    this.cy = H * 0.6 - this.r;
+    this.cy = H * 0.25; // 위에서 떨어지기 시작
+    this.vcx = 0;
+    this.vcy = 0;
     this.neighborRest = (2 * Math.PI * this.r) / N;
     this.pts = Array.from({ length: N }, (_, i) => {
       const a = (i / N) * Math.PI * 2 - Math.PI / 2;
@@ -140,7 +142,46 @@ class Pig {
     }, 0) / (N * this.r);
   }
 
+  updateCenter() {
+    const groundY = H * 0.6;
+
+    // 중력
+    this.vcy += 0.5;
+
+    // 이동
+    const prevCx = this.cx, prevCy = this.cy;
+    this.cx += this.vcx;
+    this.cy += this.vcy;
+
+    // 바닥 충돌
+    if (this.cy + this.r >= groundY) {
+      this.cy = groundY - this.r;
+      // 너무 작은 바운스는 그냥 멈춤
+      if (Math.abs(this.vcy) < 1.5) {
+        this.vcy = 0;
+      } else {
+        this.vcy *= -0.55;
+        // 바닥 충돌 시 옆으로 퍼지는 squash 효과
+        for (let i = 0; i < N; i++) {
+          const p = this.pts[i];
+          const sideForce = Math.abs(p.ox) / this.r;
+          p.vx += (p.ox > 0 ? 1 : -1) * sideForce * Math.abs(this.vcy) * 0.3;
+          p.vy -= Math.abs(this.vcy) * 0.15;
+        }
+      }
+      this.vcx *= 0.8;
+    }
+
+    // 모든 포인트를 중심 이동량만큼 같이 이동
+    const dcx = this.cx - prevCx, dcy = this.cy - prevCy;
+    for (const p of this.pts) {
+      p.x += dcx;
+      p.y += dcy;
+    }
+  }
+
   update() {
+    this.updateCenter();
     for (let i = 0; i < N; i++) {
       const p = this.pts[i];
       if (this.active && i === this.dragIdx) continue;
@@ -182,6 +223,9 @@ class Pig {
   }
 
   jiggle() {
+    // 위로 튀어오르기
+    this.vcy = -this.r * 0.13;
+    // 몸통 뭉글뭉글
     for (const p of this.pts) {
       const ax = p.ox / (Math.hypot(p.ox, p.oy) || 1);
       const ay = p.oy / (Math.hypot(p.ox, p.oy) || 1);
