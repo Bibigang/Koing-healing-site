@@ -18,10 +18,58 @@
       cursor: grab;
     }
     canvas:active { cursor: grabbing; }
+
+    #slider-wrap {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 999px;
+      padding: 10px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      touch-action: auto;
+      user-select: none;
+    }
+    #slider-wrap span {
+      font-size: 13px;
+      color: #884466;
+      white-space: nowrap;
+      font-family: sans-serif;
+    }
+    #influence-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 130px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(to right, #FFB3C6, #FF5577);
+      outline: none;
+      cursor: pointer;
+    }
+    #influence-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #FF5577;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="slider-wrap">
+  <span>뾰족</span>
+  <input id="influence-slider" type="range" min="0" max="100" value="40">
+  <span>뭉툭</span>
+</div>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -36,6 +84,11 @@ window.addEventListener('resize', () => {
   resize();
   pig.resetAt(W / 2);
 });
+
+// ── Influence slider ──────────────────────────────────────
+const slider = document.getElementById('influence-slider');
+let influenceValue = parseInt(slider.value) / 100; // 0~1
+slider.addEventListener('input', () => { influenceValue = parseInt(slider.value) / 100; });
 
 // ── Physics constants ──────────────────────────────────────
 const N = 24;
@@ -139,9 +192,12 @@ class Pig {
 
     p.x = x; p.y = y; p.vx = 0; p.vy = 0;
 
-    // Ripple force to neighbors
-    for (let spread = 1; spread <= 3; spread++) {
-      const fac = Math.pow(0.45, spread) * 0.18;
+    // Ripple force to neighbors — range controlled by slider
+    // influenceValue 0=뾰족(1칸), 1=뭉툭(8칸)
+    const maxSpread = Math.round(1 + influenceValue * 7);
+    const falloff = 0.55 - influenceValue * 0.2; // 뭉툭할수록 감쇠 완만
+    for (let spread = 1; spread <= maxSpread; spread++) {
+      const fac = Math.pow(falloff, spread) * (0.1 + influenceValue * 0.25);
       for (const sign of [1, -1]) {
         const ni = (this.dragIdx + sign * spread + N) % N;
         this.pts[ni].vx += (x - this.pts[ni].x) * fac;
