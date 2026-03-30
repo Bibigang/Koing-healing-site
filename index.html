@@ -332,16 +332,16 @@ class Pig {
         ctx.beginPath();
         ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * 0.15, 0, 0, Math.PI, false);
         ctx.stroke();
-        // 속눈썹 3줄 (위쪽 호에서 위로 뻗음)
+        // 속눈썹 3줄 (아랫선에서 아래로 뻗음 — 왼쪽 가장자리, 중앙, 오른쪽 가장자리)
         const lashW = er * (1.1 + squint * 0.4);
-        const lashAngles = [-0.5, 0, 0.5]; // 왼쪽, 중앙, 오른쪽
-        for (const angle of lashAngles) {
-          const bx = eyeCx + Math.cos(Math.PI - angle) * lashW;
-          const by = ey + er * 0.3 - Math.sin(Math.PI - angle) * er * (0.35 + squint * 0.25);
+        const eyeBottomY = ey + er * 0.3 + er * 0.15; // 아랫선 중심
+        const lashPositions = [-1, 0, 1]; // -1=왼쪽끝, 0=중앙, 1=오른쪽끝
+        for (const pos of lashPositions) {
+          const bx = eyeCx + pos * lashW * 0.85;
+          const by = eyeBottomY;
           ctx.beginPath();
           ctx.moveTo(bx, by);
-          ctx.lineTo(bx + Math.cos(Math.PI / 2 + angle) * er * 0.5,
-                     by - Math.sin(Math.PI / 2 - angle) * er * 0.5);
+          ctx.lineTo(bx + pos * er * 0.12, by + er * 0.55);
           ctx.stroke();
         }
       }
