@@ -534,7 +534,7 @@ class Accessory {
     const r = pig.r;
     if (this.type === 'crown')   return r * 0.65;
     if (this.type === 'ribbon')  return r * 0.42;
-    return r * 1.56; // glasses
+    return r * 0.82; // glasses — 눈 간격에 맞춘 비율
   }
 
   _wornPos() {
@@ -544,7 +544,7 @@ class Accessory {
       const sign = this.wornSide === 'left' ? -1 : 1;
       return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
     }
-    return { x: cx, y: cy - r * 0.08 }; // glasses
+    return { x: cx, y: cy - r * 0.1 }; // glasses — 눈 높이에 정렬
   }
 
   hitTest(mx, my) {
