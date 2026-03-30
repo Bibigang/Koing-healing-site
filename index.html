@@ -322,9 +322,20 @@ class Pig {
       // 황홀 표정: 원래 ∩ 눈이 U로 뒤집힘
       ctx.strokeStyle = '#442233';
       for (const sign of [-1, 1]) {
+        const eyeCx = cx + sign * ex;
         ctx.beginPath();
-        ctx.arc(cx + sign*ex, ey - er*0.5, er, 0.25, Math.PI - 0.25, false);
+        ctx.arc(eyeCx, ey - er*0.5, er, 0.25, Math.PI - 0.25, false);
         ctx.stroke();
+        // 속눈썹 3줄 — U 바닥에서 아래로
+        for (const pos of [-1, 0, 1]) {
+          const angle = Math.PI * 0.5 + pos * 0.55; // 중앙, 좌, 우 각도
+          const bx = eyeCx + Math.cos(angle) * er;
+          const by = ey - er*0.5 + Math.sin(angle) * er;
+          ctx.beginPath();
+          ctx.moveTo(bx, by);
+          ctx.lineTo(bx + Math.cos(angle) * er * 0.5, by + Math.sin(angle) * er * 0.5);
+          ctx.stroke();
+        }
       }
     } else if (s < 0.08) {
       // Happy: ^ ^ eyes
