@@ -271,16 +271,17 @@ class Pig {
   _drawFace(ctx, s) {
     const { cx, cy, r } = this;
 
-    // Blush — 쓰다듬을수록 더 발그레
-    ctx.globalAlpha = 0.3 + this.petLevel * 0.5;
-    ctx.fillStyle = '#FF7799';
+    // Blush — 쓰다듬을수록 더 발그레 (볼 부분만)
+    ctx.save();
+    ctx.globalAlpha = 0.28 + this.petLevel * 0.38;
+    ctx.fillStyle = '#FF4477';
     ctx.beginPath();
-    ctx.ellipse(cx - r*0.46, cy + r*0.04, r*0.17, r*0.1, -0.3, 0, Math.PI*2);
+    ctx.ellipse(cx - r*0.5, cy + r*0.06, r*0.1, r*0.07, -0.3, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(cx + r*0.46, cy + r*0.04, r*0.17, r*0.1, 0.3, 0, Math.PI*2);
+    ctx.ellipse(cx + r*0.5, cy + r*0.06, r*0.1, r*0.07, 0.3, 0, Math.PI*2);
     ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.restore();
 
     // Snout
     ctx.beginPath();
@@ -318,13 +319,18 @@ class Pig {
     if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
 
     if (this.petLevel > 0.3) {
-      // 황홀 표정: 눈이 스르르 감김
+      // 황홀 표정: 눈이 가로로 눌린 초승달 모양으로 감김
       ctx.strokeStyle = '#442233';
       const squint = Math.min((this.petLevel - 0.3) / 0.7, 1);
-      const openAngle = 0.25 + squint * 0.55;
       for (const sign of [-1, 1]) {
+        const eyeCx = cx + sign * ex;
+        // 위쪽 호 (눈꺼풀 윗선)
         ctx.beginPath();
-        ctx.arc(cx + sign*ex, ey + er*0.6, er * (1 + squint*0.3), Math.PI + openAngle, -openAngle, false);
+        ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * (0.35 + squint * 0.25), 0, Math.PI, 0, true);
+        ctx.stroke();
+        // 아랫선 (얇은 곡선)
+        ctx.beginPath();
+        ctx.ellipse(eyeCx, ey + er * 0.3, er * (1.1 + squint * 0.4), er * 0.15, 0, 0, Math.PI, false);
         ctx.stroke();
       }
     } else if (s < 0.08) {
