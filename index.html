@@ -367,7 +367,21 @@ class Pig {
     ctx.lineWidth = Math.max(2, r * 0.03);
     ctx.lineCap = 'round';
 
-    if (s < 0.08) {
+    if (this.eatTimer > 0) {
+      // 입 벌려서 먹는 중 - 동그란 입
+      ctx.fillStyle = '#882244';
+      ctx.beginPath();
+      ctx.ellipse(cx, my, r*0.13, r*0.11, 0, 0, Math.PI*2);
+      ctx.fill();
+      // 이빨
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.rect(cx - r*0.1, my - r*0.11, r*0.08, r*0.07);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.rect(cx + r*0.02, my - r*0.11, r*0.08, r*0.07);
+      ctx.fill();
+    } else if (s < 0.08) {
       // Smile
       ctx.beginPath();
       ctx.arc(cx, my - r*0.02, r*0.1, 0.15, Math.PI - 0.15);
@@ -401,7 +415,7 @@ class Food {
     this.respawn = 0;
   }
 
-  get size() { return Math.min(W, H) * 0.07; }
+  get size() { return Math.min(W, H) * 0.21; }
 
   hitTest(mx, my) {
     return !this.eaten && Math.hypot(mx - this.x, my - this.y) < this.size * 0.85;
