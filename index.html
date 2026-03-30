@@ -371,7 +371,7 @@ class Pig {
       // 입 벌려서 먹는 중 - 동그란 입
       ctx.fillStyle = '#882244';
       ctx.beginPath();
-      ctx.ellipse(cx, my, r*0.13, r*0.11, 0, 0, Math.PI*2);
+      ctx.ellipse(cx, my, r*0.22, r*0.13, 0, 0, Math.PI*2);
       ctx.fill();
     } else if (s < 0.08) {
       // Smile
@@ -600,9 +600,18 @@ canvas.addEventListener('touchend', e => { e.preventDefault(); onUp(...getXY(e))
   requestAnimationFrame(loop);
   ctx.clearRect(0, 0, W, H);
   drawBg();
-  foods.forEach(f => { f.update(); f.draw(ctx); });
+
+  foods.forEach(f => f.update());
   pig.update();
+
+  // 돼지 뒤에 그려지는 음식 (바닥에 놓인 것)
+  foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
+
+  // 돼지
   pig.draw(ctx);
+
+  // 돼지 앞에 그려지는 음식 (드래그 중인 것)
+  if (draggedFood) draggedFood.draw(ctx);
 })();
 </script>
 </body>
