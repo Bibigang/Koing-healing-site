@@ -176,7 +176,19 @@ class Pig {
       if (d < best) { best = d; this.dragIdx = i; }
     });
     this.active = true;
+    this.downX = x;
+    this.downY = y;
     return true;
+  }
+
+  jiggle() {
+    for (const p of this.pts) {
+      const ax = p.ox / (Math.hypot(p.ox, p.oy) || 1);
+      const ay = p.oy / (Math.hypot(p.ox, p.oy) || 1);
+      const power = this.r * 0.18;
+      p.vx += ax * power + (Math.random() - 0.5) * power * 0.6;
+      p.vy += ay * power + (Math.random() - 0.5) * power * 0.6;
+    }
   }
 
   pointerMove(x, y) {
@@ -206,7 +218,14 @@ class Pig {
     }
   }
 
-  pointerUp() { this.active = false; this.dragIdx = -1; }
+  pointerUp(x, y) {
+    if (this.active && x !== undefined) {
+      const moved = Math.hypot(x - this.downX, y - this.downY);
+      if (moved < 10) this.jiggle();
+    }
+    this.active = false;
+    this.dragIdx = -1;
+  }
 
   draw(ctx) {
     const s = this.stress();
@@ -402,11 +421,11 @@ function getXY(e) {
 
 canvas.addEventListener('mousedown', e => pig.pointerDown(...getXY(e)));
 canvas.addEventListener('mousemove', e => pig.pointerMove(...getXY(e)));
-canvas.addEventListener('mouseup', () => pig.pointerUp());
+canvas.addEventListener('mouseup', e => pig.pointerUp(...getXY(e)));
 canvas.addEventListener('mouseleave', () => pig.pointerUp());
 canvas.addEventListener('touchstart', e => { e.preventDefault(); pig.pointerDown(...getXY(e)); }, { passive: false });
 canvas.addEventListener('touchmove', e => { e.preventDefault(); pig.pointerMove(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); pig.pointerUp(); }, { passive: false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); pig.pointerUp(...getXY(e)); }, { passive: false });
 
 // ── Loop ──────────────────────────────────────────────────
 (function loop() {
