@@ -292,14 +292,17 @@ class Pig {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Nostrils
+    // Nostrils — 하트 모양
     ctx.fillStyle = '#BB5570';
-    ctx.beginPath();
-    ctx.ellipse(cx - r*0.12, cy + r*0.2, r*0.055, r*0.075, -0.2, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + r*0.12, cy + r*0.2, r*0.055, r*0.075, 0.2, 0, Math.PI*2);
-    ctx.fill();
+    for (const nx of [cx - r*0.12, cx + r*0.12]) {
+      const ny = cy + r*0.2;
+      const hs = r*0.07;
+      ctx.beginPath();
+      ctx.moveTo(nx, ny + hs*0.5);
+      ctx.bezierCurveTo(nx - hs*1.2, ny, nx - hs*1.2, ny - hs, nx, ny - hs*0.5);
+      ctx.bezierCurveTo(nx + hs*1.2, ny - hs, nx + hs*1.2, ny, nx, ny + hs*0.5);
+      ctx.fill();
+    }
 
     this._drawEyes(ctx, s);
     this._drawMouth(ctx, s);
