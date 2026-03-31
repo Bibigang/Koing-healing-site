@@ -220,8 +220,11 @@ class Pig {
   sniff() { this.sniffTimer = 120; }
 
   earHitTest(mx, my) {
-    for (let i = 0; i < 2; i++)
-      if (Math.hypot(mx-this.earPts[i].x, my-this.earPts[i].y) < this.r*0.3) return i;
+    for (let i = 0; i < 2; i++) {
+      const sign = i === 0 ? -1 : 1;
+      const ax = this.cx + sign*this.r*0.52, ay = this.cy - this.r*0.78;
+      if (Math.hypot(mx-ax, my-ay) < this.r*0.38) return i;
+    }
     return -1;
   }
   startEarDrag(i) { this.earDragIdx = i; this.earPullTimer = 60; }
@@ -270,8 +273,8 @@ class Pig {
       ctx.translate(this.cx, this.cy); ctx.scale(fatScale, fatScale); ctx.translate(-this.cx, -this.cy);
     }
 
-    this._drawEar(ctx, this.earPts[0].x, this.earPts[0].y);
-    this._drawEar(ctx, this.earPts[1].x, this.earPts[1].y);
+    this._drawEar(ctx, this.cx-this.r*0.52, this.cy-this.r*0.78, this.earPts[0].x, this.earPts[0].y);
+    this._drawEar(ctx, this.cx+this.r*0.52, this.cy-this.r*0.78, this.earPts[1].x, this.earPts[1].y);
 
     ctx.save();
     ctx.shadowColor='rgba(80,0,30,0.18)'; ctx.shadowBlur=20; ctx.shadowOffsetY=10;
@@ -285,11 +288,37 @@ class Pig {
     if (fatScale !== 1) ctx.restore();
   }
 
-  _drawEar(ctx, x, y) {
-    const r = this.r * 0.22;
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#FFAAC4'; ctx.fill();
+  _drawEar(ctx, ax, ay, tx, ty) {
+    const baseR = this.r * 0.22;
+    const dx = tx - ax, dy = ty - ay;
+    const dist = Math.hypot(dx, dy);
+    if (dist < baseR * 0.25) {
+      // 늘어나지 않은 기본 원형
+      ctx.beginPath(); ctx.arc(ax, ay, baseR, 0, Math.PI*2);
+      ctx.fillStyle='#FFAAC4'; ctx.fill();
+      ctx.strokeStyle='#E896A8'; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ax, ay, baseR*0.5, 0, Math.PI*2);
+      ctx.fillStyle='#FF8FAE'; ctx.fill();
+      return;
+    }
+    // 늘어난 귀: 앵커→팁 방향 캡슐 모양
+    const angle = Math.atan2(dy, dx);
+    const perp = angle + Math.PI / 2;
+    const cosP = Math.cos(perp), sinP = Math.sin(perp);
+    const tipR = Math.max(baseR * 0.28, baseR * (1 - dist / (this.r * 1.2)));
+    ctx.beginPath();
+    ctx.moveTo(ax + cosP * baseR, ay + sinP * baseR);
+    ctx.lineTo(tx + cosP * tipR, ty + sinP * tipR);
+    ctx.arc(tx, ty, tipR, perp, perp + Math.PI);
+    ctx.lineTo(ax - cosP * baseR, ay - sinP * baseR);
+    ctx.arc(ax, ay, baseR, perp + Math.PI, perp + Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle='#FFAAC4'; ctx.fill();
     ctx.strokeStyle='#E896A8'; ctx.lineWidth=2.5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(x,y,r*0.5,0,Math.PI*2); ctx.fillStyle='#FF8FAE'; ctx.fill();
+    // 안쪽 핑크 점
+    const midX = ax + dx * 0.6, midY = ay + dy * 0.6;
+    ctx.beginPath(); ctx.arc(midX, midY, Math.min(tipR * 0.85, baseR * 0.5), 0, Math.PI*2);
+    ctx.fillStyle='#FF8FAE'; ctx.fill();
   }
 
   _drawFace(ctx, s) {
