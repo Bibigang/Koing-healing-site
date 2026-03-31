@@ -6,19 +6,9 @@
   <title>돼지 힐링 🐷</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      overflow: hidden;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      background: #87CEEB;
-    }
-    canvas {
-      display: block;
-      cursor: grab;
-    }
+    body { overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; background: #87CEEB; }
+    canvas { display: block; cursor: grab; }
     canvas:active { cursor: grabbing; }
-
   </style>
 </head>
 <body>
@@ -27,163 +17,192 @@
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let W, H;
-
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
 
-// ── Influence (고정값) ────────────────────────────────────
-const influenceValue = 0.4;
+// ── Audio ─────────────────────────────────────────────────
+let audioCtx = null;
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playBoing() {
+  try {
+    const ac = getAC(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(520, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(160, ac.currentTime + 0.32);
+    g.gain.setValueAtTime(0.28, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.38);
+    o.start(); o.stop(ac.currentTime + 0.38);
+  } catch(e) {}
+}
+let stretchSndTimer = 0;
+function playStretch() {
+  if (stretchSndTimer > 0) return;
+  stretchSndTimer = 14;
+  try {
+    const ac = getAC(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(70, ac.currentTime);
+    o.frequency.linearRampToValueAtTime(220, ac.currentTime + 0.2);
+    g.gain.setValueAtTime(0.07, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.2);
+    o.start(); o.stop(ac.currentTime + 0.2);
+  } catch(e) {}
+}
 
-// ── Physics constants ──────────────────────────────────────
-const N = 24;
-const K_RESTORE = 0.15;
-const K_NEIGHBOR = 0.07;
-const DAMPING = 0.74;
-const MAX_DEFORM = 1.7;
+// ── Constants ─────────────────────────────────────────────
+const influenceValue = 0.4;
+const N = 24, K_RESTORE = 0.15, K_NEIGHBOR = 0.07, DAMPING = 0.74, MAX_DEFORM = 1.7;
 
 // ── Helpers ───────────────────────────────────────────────
 function lerpColor(c1, c2, t) {
   t = Math.max(0, Math.min(1, t));
   const p = (c, s) => parseInt(c.slice(s, s+2), 16);
-  const mix = (a, b) => Math.round(a + (b - a) * t).toString(16).padStart(2, '0');
+  const mix = (a, b) => Math.round(a + (b-a)*t).toString(16).padStart(2,'0');
   return `#${mix(p(c1,1),p(c2,1))}${mix(p(c1,3),p(c2,3))}${mix(p(c1,5),p(c2,5))}`;
 }
-
 function smoothPath(ctx, pts) {
   const n = pts.length;
-  ctx.moveTo((pts[n-1].x + pts[0].x) / 2, (pts[n-1].y + pts[0].y) / 2);
+  ctx.moveTo((pts[n-1].x+pts[0].x)/2, (pts[n-1].y+pts[0].y)/2);
   for (let i = 0; i < n; i++) {
-    const c = pts[i], nx = pts[(i+1) % n];
+    const c = pts[i], nx = pts[(i+1)%n];
     ctx.quadraticCurveTo(c.x, c.y, (c.x+nx.x)/2, (c.y+nx.y)/2);
   }
   ctx.closePath();
+}
+
+// ── Rain / Cloud ──────────────────────────────────────────
+let rainTimer = 0;
+let rainDrops = [];
+function initRain() {
+  rainDrops = Array.from({length: 90}, () => ({
+    x: Math.random() * W, y: Math.random() * H * 0.6,
+    speed: 6 + Math.random() * 5, len: 10 + Math.random() * 8,
+  }));
+}
+const CLOUDS = [
+  { rx: 0.25, ry: 0.07, rs: 0.07 },
+  { rx: 0.65, ry: 0.04, rs: 0.085 },
+  { rx: 0.83, ry: 0.11, rs: 0.055 },
+];
+function cloudHit(mx, my) {
+  return CLOUDS.some(c => Math.hypot(mx - c.rx*W, my - c.ry*H) < c.rs * Math.min(W,H) * 1.7);
+}
+
+// ── Panel scroll ──────────────────────────────────────────
+let panelScroll = 0, panelMaxScroll = 0;
+let panelDragging = false, panelDragStartY = 0, panelScrollStart = 0;
+function updatePanelMaxScroll() {
+  const ph = H * 0.44;
+  const lastY = H*0.09 + (accessories.length - 1) * H*0.10 + H*0.09;
+  panelMaxScroll = Math.max(0, lastY - H*0.04 - ph);
+  panelScroll = Math.min(panelScroll, panelMaxScroll);
 }
 
 // ── Pig ───────────────────────────────────────────────────
 class Pig {
   resetAt(x) {
     this.r = Math.min(W, H) * 0.16;
-    this.cx = x;
-    this.cy = H * 0.25; // 위에서 떨어지기 시작
-    this.vcx = 0;
-    this.vcy = 0;
+    this.cx = x; this.cy = H * 0.25;
+    this.vcx = 0; this.vcy = 0;
     this.neighborRest = (2 * Math.PI * this.r) / N;
     this.pts = Array.from({ length: N }, (_, i) => {
       const a = (i / N) * Math.PI * 2 - Math.PI / 2;
-      const ox = Math.cos(a) * this.r;
-      const oy = Math.sin(a) * this.r;
+      const ox = Math.cos(a) * this.r, oy = Math.sin(a) * this.r;
       return { x: this.cx + ox, y: this.cy + oy, vx: 0, vy: 0, ox, oy };
     });
-    this.dragIdx = -1;
-    this.active = false;
-    this.petLevel = 0;
-    this.drunkTimer = 0;
-    this.sniffTimer = 0;
-    this.fatTimer = 0;
-    this.cupcakeEatTimes = [];
+    this.dragIdx = -1; this.active = false;
+    this.petLevel = 0; this.eatTimer = 0;
+    this.drunkTimer = 0; this.sniffTimer = 0;
+    this.fatTimer = 0; this.cupcakeEatTimes = [];
+    this.earPts = [
+      { x: this.cx - this.r*0.52, y: this.cy - this.r*0.78, vx: 0, vy: 0 },
+      { x: this.cx + this.r*0.52, y: this.cy - this.r*0.78, vx: 0, vy: 0 },
+    ];
+    this.earDragIdx = -1; this.earPullTimer = 0;
   }
-
   constructor(x) { this.resetAt(x); }
 
   stress() {
-    return this.pts.reduce((sum, p) => {
-      return sum + Math.hypot(p.x - (this.cx + p.ox), p.y - (this.cy + p.oy));
-    }, 0) / (N * this.r);
+    return this.pts.reduce((sum, p) =>
+      sum + Math.hypot(p.x-(this.cx+p.ox), p.y-(this.cy+p.oy)), 0) / (N * this.r);
   }
 
   updateCenter() {
     const groundY = H * 0.6;
-
-    // 중력
     this.vcy += 0.5;
-
-    // 이동
     const prevCx = this.cx, prevCy = this.cy;
-    this.cx += this.vcx;
-    this.cy += this.vcy;
-
-    // 바닥 충돌
+    this.cx += this.vcx; this.cy += this.vcy;
     if (this.cy + this.r >= groundY) {
       this.cy = groundY - this.r;
-      // 너무 작은 바운스는 그냥 멈춤
-      if (Math.abs(this.vcy) < 1.5) {
-        this.vcy = 0;
-      } else {
+      if (Math.abs(this.vcy) < 1.5) { this.vcy = 0; }
+      else {
         this.vcy *= -0.55;
-        // 바닥 충돌 시 옆으로 퍼지는 squash 효과
         for (let i = 0; i < N; i++) {
           const p = this.pts[i];
-          const sideForce = Math.abs(p.ox) / this.r;
-          p.vx += (p.ox > 0 ? 1 : -1) * sideForce * Math.abs(this.vcy) * 0.3;
+          const sf = Math.abs(p.ox) / this.r;
+          p.vx += (p.ox > 0 ? 1 : -1) * sf * Math.abs(this.vcy) * 0.3;
           p.vy -= Math.abs(this.vcy) * 0.15;
         }
       }
       this.vcx *= 0.8;
     }
-
-    // 모든 포인트를 중심 이동량만큼 같이 이동
     const dcx = this.cx - prevCx, dcy = this.cy - prevCy;
-    for (const p of this.pts) {
-      p.x += dcx;
-      p.y += dcy;
-    }
+    for (const p of this.pts) { p.x += dcx; p.y += dcy; }
   }
 
   update() {
-    this.petLevel = Math.max(0, this.petLevel - 0.012); // 천천히 식음
+    this.petLevel = Math.max(0, this.petLevel - 0.012);
     if (this.fatTimer > 0) this.fatTimer--;
+    if (this.earPullTimer > 0) this.earPullTimer--;
+    if (stretchSndTimer > 0) stretchSndTimer--;
     this.updateCenter();
     for (let i = 0; i < N; i++) {
       const p = this.pts[i];
       if (this.active && i === this.dragIdx) continue;
-
-      const prev = this.pts[(i - 1 + N) % N];
-      const next = this.pts[(i + 1) % N];
-
-      // Restore to original shape
+      const prev = this.pts[(i-1+N)%N], next = this.pts[(i+1)%N];
       let fx = (this.cx + p.ox - p.x) * K_RESTORE;
       let fy = (this.cy + p.oy - p.y) * K_RESTORE;
-
-      // Neighbor springs (keeps outline smooth)
       for (const nb of [prev, next]) {
-        const dx = nb.x - p.x, dy = nb.y - p.y;
-        const d = Math.hypot(dx, dy) || 0.001;
+        const dx = nb.x-p.x, dy = nb.y-p.y, d = Math.hypot(dx,dy)||0.001;
         const f = (d - this.neighborRest) * K_NEIGHBOR;
-        fx += (dx / d) * f;
-        fy += (dy / d) * f;
+        fx += (dx/d)*f; fy += (dy/d)*f;
       }
-
-      p.vx = (p.vx + fx) * DAMPING;
-      p.vy = (p.vy + fy) * DAMPING;
-      p.x += p.vx;
-      p.y += p.vy;
+      p.vx = (p.vx+fx)*DAMPING; p.vy = (p.vy+fy)*DAMPING;
+      p.x += p.vx; p.y += p.vy;
+    }
+    // Ear springs
+    for (let i = 0; i < 2; i++) {
+      if (this.earDragIdx === i) continue;
+      const ep = this.earPts[i];
+      const sign = i === 0 ? -1 : 1;
+      const tx = this.cx + sign*this.r*0.52, ty = this.cy - this.r*0.78;
+      ep.vx = (ep.vx + (tx-ep.x)*0.22) * 0.68;
+      ep.vy = (ep.vy + (ty-ep.y)*0.22) * 0.68;
+      ep.x += ep.vx; ep.y += ep.vy;
     }
   }
 
   pointerDown(x, y) {
-    if (Math.hypot(x - this.cx, y - this.cy) > this.r * 1.5) return false;
+    if (Math.hypot(x-this.cx, y-this.cy) > this.r*1.5) return false;
     let best = Infinity;
-    this.pts.forEach((p, i) => {
-      const d = Math.hypot(x - p.x, y - p.y);
-      if (d < best) { best = d; this.dragIdx = i; }
-    });
-    this.active = true;
-    this.downX = x;
-    this.downY = y;
+    this.pts.forEach((p, i) => { const d = Math.hypot(x-p.x,y-p.y); if(d<best){best=d;this.dragIdx=i;} });
+    this.active = true; this.downX = x; this.downY = y;
     return true;
   }
 
   jiggle() {
     this.vcy = -this.r * 0.13;
     for (const p of this.pts) {
-      const ax = p.ox / (Math.hypot(p.ox, p.oy) || 1);
-      const ay = p.oy / (Math.hypot(p.ox, p.oy) || 1);
-      const power = this.r * 0.18;
-      p.vx += ax * power + (Math.random() - 0.5) * power * 0.6;
-      p.vy += ay * power + (Math.random() - 0.5) * power * 0.6;
+      const ax = p.ox/(Math.hypot(p.ox,p.oy)||1), ay = p.oy/(Math.hypot(p.ox,p.oy)||1);
+      const pw = this.r * 0.18;
+      p.vx += ax*pw + (Math.random()-0.5)*pw*0.6;
+      p.vy += ay*pw + (Math.random()-0.5)*pw*0.6;
     }
   }
 
@@ -191,94 +210,76 @@ class Pig {
     if (type === 'cocktail') this.drunkTimer = 60;
     if (type === 'cupcake') {
       const now = Date.now();
-      this.cupcakeEatTimes = this.cupcakeEatTimes.filter(t => now - t < 5000);
+      this.cupcakeEatTimes = this.cupcakeEatTimes.filter(t => now-t < 5000);
       this.cupcakeEatTimes.push(now);
-      if (this.cupcakeEatTimes.length >= 3) {
-        this.fatTimer = 120; // 2초 뚱뚱
-        this.cupcakeEatTimes = [];
-      }
+      if (this.cupcakeEatTimes.length >= 3) { this.fatTimer = 120; this.cupcakeEatTimes = []; }
     }
-    this.eatTimer = 100;
-    this.jiggle();
+    this.eatTimer = 100; this.jiggle();
   }
 
-  sniff() {
-    this.sniffTimer = 120; // 2초간 콧구멍 펄럭
+  sniff() { this.sniffTimer = 120; }
+
+  earHitTest(mx, my) {
+    for (let i = 0; i < 2; i++)
+      if (Math.hypot(mx-this.earPts[i].x, my-this.earPts[i].y) < this.r*0.3) return i;
+    return -1;
   }
+  startEarDrag(i) { this.earDragIdx = i; this.earPullTimer = 60; }
+  moveEarDrag(i, mx, my) {
+    const ep = this.earPts[i]; ep.x=mx; ep.y=my; ep.vx=0; ep.vy=0;
+    this.earPullTimer = 60;
+  }
+  endEarDrag() { this.earDragIdx = -1; }
 
   pointerMove(x, y) {
     if (!this.active) return;
     const p = this.pts[this.dragIdx];
-
-    // Constrain max deformation
-    const rx = this.cx + p.ox, ry = this.cy + p.oy;
-    const dx = x - rx, dy = y - ry;
-    const d = Math.hypot(dx, dy);
+    const rx = this.cx+p.ox, ry = this.cy+p.oy;
+    const dx = x-rx, dy = y-ry, d = Math.hypot(dx,dy);
     const maxD = this.r * MAX_DEFORM;
-    if (d > maxD) { x = rx + dx/d * maxD; y = ry + dy/d * maxD; }
-
-    p.x = x; p.y = y; p.vx = 0; p.vy = 0;
-
-    // Ripple force to neighbors — range controlled by slider
-    // influenceValue 0=뾰족(1칸), 1=뭉툭(8칸)
-    const maxSpread = Math.round(1 + influenceValue * 7);
-    const falloff = 0.55 - influenceValue * 0.2; // 뭉툭할수록 감쇠 완만
+    if (d > maxD) { x = rx+dx/d*maxD; y = ry+dy/d*maxD; }
+    p.x=x; p.y=y; p.vx=0; p.vy=0;
+    playStretch();
+    const maxSpread = Math.round(1 + influenceValue*7);
+    const falloff = 0.55 - influenceValue*0.2;
     for (let spread = 1; spread <= maxSpread; spread++) {
-      const fac = Math.pow(falloff, spread) * (0.1 + influenceValue * 0.25);
-      for (const sign of [1, -1]) {
-        const ni = (this.dragIdx + sign * spread + N) % N;
-        this.pts[ni].vx += (x - this.pts[ni].x) * fac;
-        this.pts[ni].vy += (y - this.pts[ni].y) * fac;
+      const fac = Math.pow(falloff, spread) * (0.1 + influenceValue*0.25);
+      for (const sign of [1,-1]) {
+        const ni = (this.dragIdx + sign*spread + N) % N;
+        this.pts[ni].vx += (x-this.pts[ni].x)*fac;
+        this.pts[ni].vy += (y-this.pts[ni].y)*fac;
       }
     }
   }
 
   pointerUp(x, y) {
     if (this.active && x !== undefined) {
-      const moved = Math.hypot(x - this.downX, y - this.downY);
-      if (moved < 10) this.jiggle();
+      if (Math.hypot(x-this.downX, y-this.downY) < 10) this.jiggle();
     }
-    this.active = false;
-    this.dragIdx = -1;
+    this.active = false; this.dragIdx = -1;
   }
 
   draw(ctx) {
     const s = this.stress();
-    const bodyColor = lerpColor('#FFB3C6', '#FF5577', Math.min(s / 0.5, 1));
-    const strokeColor = lerpColor('#E896A8', '#CC3355', Math.min(s / 0.5, 1));
+    const bodyColor = lerpColor('#FFB3C6','#FF5577', Math.min(s/0.5,1));
+    const strokeColor = lerpColor('#E896A8','#CC3355', Math.min(s/0.5,1));
 
-    // 뚱뚱 효과: 중심 기준 sine 팽창 (부드럽게 부풀었다 꺼짐)
-    const fatScale = this.fatTimer > 0
-      ? 1 + 0.38 * Math.sin(Math.PI * (1 - this.fatTimer / 120))
-      : 1;
+    const fatScale = this.fatTimer > 0 ? 1 + 0.38*Math.sin(Math.PI*(1-this.fatTimer/120)) : 1;
     if (fatScale !== 1) {
       ctx.save();
-      ctx.translate(this.cx, this.cy);
-      ctx.scale(fatScale, fatScale);
-      ctx.translate(-this.cx, -this.cy);
+      ctx.translate(this.cx, this.cy); ctx.scale(fatScale, fatScale); ctx.translate(-this.cx, -this.cy);
     }
 
-    // Ears behind body
-    this._drawEar(ctx, this.cx - this.r * 0.52, this.cy - this.r * 0.78);
-    this._drawEar(ctx, this.cx + this.r * 0.52, this.cy - this.r * 0.78);
+    this._drawEar(ctx, this.earPts[0].x, this.earPts[0].y);
+    this._drawEar(ctx, this.earPts[1].x, this.earPts[1].y);
 
-    // Body shadow
     ctx.save();
-    ctx.shadowColor = 'rgba(80,0,30,0.18)';
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetY = 10;
-    ctx.beginPath();
-    smoothPath(ctx, this.pts);
-    ctx.fillStyle = bodyColor;
-    ctx.fill();
+    ctx.shadowColor='rgba(80,0,30,0.18)'; ctx.shadowBlur=20; ctx.shadowOffsetY=10;
+    ctx.beginPath(); smoothPath(ctx, this.pts); ctx.fillStyle=bodyColor; ctx.fill();
     ctx.restore();
 
-    // Body stroke
-    ctx.beginPath();
-    smoothPath(ctx, this.pts);
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    ctx.beginPath(); smoothPath(ctx, this.pts);
+    ctx.strokeStyle=strokeColor; ctx.lineWidth=3; ctx.stroke();
 
     this._drawFace(ctx, s);
     if (fatScale !== 1) ctx.restore();
@@ -286,54 +287,32 @@ class Pig {
 
   _drawEar(ctx, x, y) {
     const r = this.r * 0.22;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFAAC4';
-    ctx.fill();
-    ctx.strokeStyle = '#E896A8';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#FF8FAE';
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#FFAAC4'; ctx.fill();
+    ctx.strokeStyle='#E896A8'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,r*0.5,0,Math.PI*2); ctx.fillStyle='#FF8FAE'; ctx.fill();
   }
 
   _drawFace(ctx, s) {
     const { cx, cy, r } = this;
 
-    // Blush — 쓰다듬을수록 더 발그레 (볼 부분만)
     ctx.save();
-    ctx.globalAlpha = 0.28 + this.petLevel * 0.38;
-    ctx.fillStyle = '#FF4477';
-    ctx.beginPath();
-    ctx.ellipse(cx - r*0.5, cy + r*0.06, r*0.13, r*0.09, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + r*0.5, cy + r*0.06, r*0.13, r*0.09, 0, 0, Math.PI*2);
-    ctx.fill();
+    ctx.globalAlpha = 0.28 + this.petLevel*0.38; ctx.fillStyle='#FF4477';
+    ctx.beginPath(); ctx.ellipse(cx-r*0.5, cy+r*0.06, r*0.13, r*0.09, 0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx+r*0.5, cy+r*0.06, r*0.13, r*0.09, 0,0,Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // Snout
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + r*0.2, r*0.33, r*0.23, 0, 0, Math.PI*2);
-    ctx.fillStyle = '#FFB3C6';
-    ctx.fill();
-    ctx.strokeStyle = '#E896A8';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, cy+r*0.2, r*0.33, r*0.23, 0,0,Math.PI*2);
+    ctx.fillStyle='#FFB3C6'; ctx.fill(); ctx.strokeStyle='#E896A8'; ctx.lineWidth=2; ctx.stroke();
 
-    // Nostrils — 하트 모양 (세로로 길게), sniff 중엔 펄럭
     if (this.sniffTimer > 0) this.sniffTimer--;
-    const sniffScale = this.sniffTimer > 0 ? 1 + 0.7 * Math.abs(Math.sin(this.sniffTimer * 0.25)) : 1;
-    ctx.fillStyle = '#BB5570';
-    for (const nx of [cx - r*0.12, cx + r*0.12]) {
-      const ny = cy + r*0.2;
-      const hw = r*0.038 * sniffScale, hh = r*0.1 * sniffScale;
+    const ss = this.sniffTimer > 0 ? 1 + 0.7*Math.abs(Math.sin(this.sniffTimer*0.25)) : 1;
+    ctx.fillStyle='#BB5570';
+    for (const nx of [cx-r*0.12, cx+r*0.12]) {
+      const ny=cy+r*0.2, hw=r*0.038*ss, hh=r*0.1*ss;
       ctx.beginPath();
-      ctx.moveTo(nx, ny + hh*0.6);
-      ctx.bezierCurveTo(nx - hw*2, ny + hh*0.1, nx - hw*2, ny - hh*0.9, nx, ny - hh*0.35);
-      ctx.bezierCurveTo(nx + hw*2, ny - hh*0.9, nx + hw*2, ny + hh*0.1, nx, ny + hh*0.6);
+      ctx.moveTo(nx, ny+hh*0.6);
+      ctx.bezierCurveTo(nx-hw*2, ny+hh*0.1, nx-hw*2, ny-hh*0.9, nx, ny-hh*0.35);
+      ctx.bezierCurveTo(nx+hw*2, ny-hh*0.9, nx+hw*2, ny+hh*0.1, nx, ny+hh*0.6);
       ctx.fill();
     }
 
@@ -343,76 +322,68 @@ class Pig {
 
   _drawEyes(ctx, s) {
     const { cx, cy, r } = this;
-    const ey = cy - r * 0.1;
-    const ex = r * 0.27;
-    const er = r * 0.1;
-
+    const ey = cy-r*0.1, ex = r*0.27, er = r*0.1;
     ctx.save();
-    ctx.lineWidth = Math.max(2.5, r * 0.038);
-    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(2.5, r*0.038); ctx.lineCap='round';
 
-    // 먹는 중이면 무조건 행복 표정
-    if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
+    if (this.eatTimer > 0) { this.eatTimer--; s=0; }
 
-    if (this.drunkTimer > 0) {
-      this.drunkTimer--;
-      // 칵테일 먹은 후: ~ ~ 눈
-      ctx.strokeStyle = '#442233';
-      for (const sign of [-1, 1]) {
-        const eyeCx = cx + sign * ex;
+    if (this.earDragIdx >= 0 || this.earPullTimer > 0) {
+      // 귀 당길 때: X X
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
+        const ex2 = cx+sign*ex;
         ctx.beginPath();
-        ctx.moveTo(eyeCx - er, ey);
-        ctx.bezierCurveTo(eyeCx - er*0.3, ey - er*0.9, eyeCx + er*0.3, ey + er*0.9, eyeCx + er, ey);
+        ctx.moveTo(ex2-er, ey-er*0.5); ctx.lineTo(ex2+er, ey+er*0.5);
+        ctx.moveTo(ex2+er, ey-er*0.5); ctx.lineTo(ex2-er, ey+er*0.5);
+        ctx.stroke();
+      }
+    } else if (rainTimer > 0) {
+      // 비 내릴 때: U U (처진 슬픈 눈)
+      ctx.strokeStyle='#3366AA';
+      for (const sign of [-1,1]) {
+        ctx.beginPath();
+        ctx.arc(cx+sign*ex, ey-er*0.3, er, 0.25, Math.PI-0.25, false);
+        ctx.stroke();
+      }
+    } else if (this.drunkTimer > 0) {
+      this.drunkTimer--;
+      // ~ ~
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
+        const ex2=cx+sign*ex;
+        ctx.beginPath();
+        ctx.moveTo(ex2-er, ey);
+        ctx.bezierCurveTo(ex2-er*0.3, ey-er*0.9, ex2+er*0.3, ey+er*0.9, ex2+er, ey);
         ctx.stroke();
       }
     } else if (this.petLevel > 0.3) {
-      // 황홀 표정: 원래 ∩ 눈이 U로 뒤집힘
-      ctx.strokeStyle = '#442233';
-      for (const sign of [-1, 1]) {
-        const eyeCx = cx + sign * ex;
-        ctx.beginPath();
-        ctx.arc(eyeCx, ey - er*0.5, er, 0.25, Math.PI - 0.25, false);
-        ctx.stroke();
-        // 속눈썹 3줄 — U 바닥에서 아래로
-        for (const pos of [-1, 0, 1]) {
-          const angle = Math.PI * 0.5 + pos * 0.55; // 중앙, 좌, 우 각도
-          const bx = eyeCx + Math.cos(angle) * er;
-          const by = ey - er*0.5 + Math.sin(angle) * er;
-          ctx.beginPath();
-          ctx.moveTo(bx, by);
-          ctx.lineTo(bx + Math.cos(angle) * er * 0.5, by + Math.sin(angle) * er * 0.5);
-          ctx.stroke();
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
+        const ex2=cx+sign*ex;
+        ctx.beginPath(); ctx.arc(ex2, ey-er*0.5, er, 0.25, Math.PI-0.25, false); ctx.stroke();
+        for (const pos of [-1,0,1]) {
+          const ang=Math.PI*0.5+pos*0.55;
+          const bx=ex2+Math.cos(ang)*er, by=ey-er*0.5+Math.sin(ang)*er;
+          ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+Math.cos(ang)*er*0.5, by+Math.sin(ang)*er*0.5); ctx.stroke();
         }
       }
     } else if (s < 0.08) {
-      // Happy: ^ ^ eyes
-      ctx.strokeStyle = '#442233';
-      for (const sign of [-1, 1]) {
-        ctx.beginPath();
-        ctx.arc(cx + sign*ex, ey + er*0.5, er, Math.PI + 0.25, -0.25, false);
-        ctx.stroke();
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
+        ctx.beginPath(); ctx.arc(cx+sign*ex, ey+er*0.5, er, Math.PI+0.25, -0.25, false); ctx.stroke();
       }
     } else if (s < 0.35) {
-      // Surprised: O O
-      for (const sign of [-1, 1]) {
-        ctx.fillStyle = '#442233';
-        ctx.beginPath();
-        ctx.arc(cx + sign*ex, ey, er, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.arc(cx + sign*ex + er*0.3, ey - er*0.3, er*0.35, 0, Math.PI*2);
-        ctx.fill();
+      for (const sign of [-1,1]) {
+        ctx.fillStyle='#442233'; ctx.beginPath(); ctx.arc(cx+sign*ex, ey, er, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(cx+sign*ex+er*0.3, ey-er*0.3, er*0.35, 0, Math.PI*2); ctx.fill();
       }
     } else {
-      // Distressed: × ×
-      ctx.strokeStyle = '#442233';
-      for (const sign of [-1, 1]) {
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
         ctx.beginPath();
-        ctx.moveTo(cx + sign*ex - er, ey - er*0.5);
-        ctx.lineTo(cx + sign*ex + er, ey + er*0.5);
-        ctx.moveTo(cx + sign*ex + er, ey - er*0.5);
-        ctx.lineTo(cx + sign*ex - er, ey + er*0.5);
+        ctx.moveTo(cx+sign*ex-er, ey-er*0.5); ctx.lineTo(cx+sign*ex+er, ey+er*0.5);
+        ctx.moveTo(cx+sign*ex+er, ey-er*0.5); ctx.lineTo(cx+sign*ex-er, ey+er*0.5);
         ctx.stroke();
       }
     }
@@ -421,35 +392,31 @@ class Pig {
 
   _drawMouth(ctx, s) {
     const { cx, cy, r } = this;
-    const my = cy + r * 0.44;
+    const my = cy+r*0.44;
     ctx.save();
-    ctx.strokeStyle = '#BB5570';
-    ctx.lineWidth = Math.max(2, r * 0.03);
-    ctx.lineCap = 'round';
+    ctx.lineWidth=Math.max(2,r*0.03); ctx.lineCap='round';
 
-    if (this.eatTimer > 0) {
-      // 입 벌려서 먹는 중 - 동그란 입
-      ctx.fillStyle = '#882244';
+    if (rainTimer > 0) {
+      // 슬픈 입 (뒤집힌 U = ∩ frown)
+      ctx.strokeStyle='#3366AA';
       ctx.beginPath();
-      ctx.ellipse(cx, my, r*0.22, r*0.13, 0, 0, Math.PI*2);
-      ctx.fill();
-    } else if (s < 0.08) {
-      // Smile
-      ctx.beginPath();
-      ctx.arc(cx, my - r*0.02, r*0.1, 0.15, Math.PI - 0.15);
+      ctx.arc(cx, my-r*0.04, r*0.1, 0.15, Math.PI-0.15, true);
       ctx.stroke();
+    } else if (this.eatTimer > 0) {
+      ctx.fillStyle='#882244';
+      ctx.beginPath(); ctx.ellipse(cx, my, r*0.22, r*0.13, 0,0,Math.PI*2); ctx.fill();
+    } else if (s < 0.08) {
+      ctx.strokeStyle='#BB5570';
+      ctx.beginPath(); ctx.arc(cx, my-r*0.02, r*0.1, 0.15, Math.PI-0.15); ctx.stroke();
     } else if (s < 0.35) {
-      // O mouth
-      ctx.fillStyle = '#BB5570';
-      ctx.beginPath();
-      ctx.arc(cx, my, r*0.065, 0, Math.PI*2);
-      ctx.fill();
+      ctx.fillStyle='#BB5570';
+      ctx.beginPath(); ctx.arc(cx, my, r*0.065, 0, Math.PI*2); ctx.fill();
     } else {
-      // Wavy distress
+      ctx.strokeStyle='#BB5570';
       ctx.beginPath();
-      ctx.moveTo(cx - r*0.1, my);
-      ctx.quadraticCurveTo(cx - r*0.03, my + r*0.06, cx, my - r*0.01);
-      ctx.quadraticCurveTo(cx + r*0.03, my - r*0.07, cx + r*0.1, my + r*0.01);
+      ctx.moveTo(cx-r*0.1, my);
+      ctx.quadraticCurveTo(cx-r*0.03, my+r*0.06, cx, my-r*0.01);
+      ctx.quadraticCurveTo(cx+r*0.03, my-r*0.07, cx+r*0.1, my+r*0.01);
       ctx.stroke();
     }
     ctx.restore();
@@ -459,514 +426,412 @@ class Pig {
 // ── Food ──────────────────────────────────────────────────
 class Food {
   constructor(type, rx, ry) {
-    this.type = type;
-    this.rx = rx; this.ry = ry; // 원래 위치
-    this.x = rx; this.y = ry;
-    this.dragging = false;
-    this.eaten = false;
-    this.respawn = 0;
+    this.type=type; this.rx=rx; this.ry=ry;
+    this.x=rx; this.y=ry; this.dragging=false; this.eaten=false; this.respawn=0;
   }
-
-  get size() { return Math.min(W, H) * 0.21; }
-
-  hitTest(mx, my) {
-    return !this.eaten && Math.hypot(mx - this.x, my - this.y) < this.size * 0.85;
-  }
-
+  get size() { return Math.min(W,H)*0.21; }
+  hitTest(mx, my) { return !this.eaten && Math.hypot(mx-this.x, my-this.y) < this.size*0.85; }
   update() {
-    if (this.eaten) {
-      this.respawn--;
-      if (this.respawn <= 0) {
-        this.eaten = false;
-        this.x = this.rx; this.y = this.ry;
-      }
-    }
+    if (this.eaten) { this.respawn--; if(this.respawn<=0){this.eaten=false;this.x=this.rx;this.y=this.ry;} }
   }
-
-  startDrag() { this.dragging = true; }
-  moveTo(x, y) { if (this.dragging) { this.x = x; this.y = y; } }
-  endDrag() {
-    this.dragging = false;
-    if (!this.eaten) { this.x = this.rx; this.y = this.ry; }
-  }
-  markEaten() {
-    this.eaten = true;
-    this.dragging = false;
-    this.respawn = 45; // 0.75초 후 부활
-  }
+  startDrag() { this.dragging=true; }
+  moveTo(x,y) { if(this.dragging){this.x=x;this.y=y;} }
+  endDrag() { this.dragging=false; if(!this.eaten){this.x=this.rx;this.y=this.ry;} }
+  markEaten() { this.eaten=true; this.dragging=false; this.respawn=45; }
 
   draw(ctx) {
     if (this.eaten) return;
-    const { x, y, size: s } = this;
-    if (this.type === 'cupcake') this._drawCupcake(ctx, x, y, s);
-    else if (this.type === 'cocktail') this._drawCocktail(ctx, x, y, s);
-    else this._drawFlower(ctx, x, y, s);
+    const {x,y,size:s}=this;
+    if (this.type==='cupcake') this._drawCupcake(ctx,x,y,s);
+    else if (this.type==='cocktail') this._drawCocktail(ctx,x,y,s);
+    else this._drawFlower(ctx,x,y,s);
   }
 
-  _drawCupcake(ctx, x, y, s) {
-    // 컵 아랫부분
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.38, y - s*0.05);
-    ctx.lineTo(x - s*0.28, y + s*0.45);
-    ctx.lineTo(x + s*0.28, y + s*0.45);
-    ctx.lineTo(x + s*0.38, y - s*0.05);
-    ctx.closePath();
-    ctx.fillStyle = '#C4854A';
-    ctx.fill();
-    // 줄무늬
-    ctx.strokeStyle = '#A8683A';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.1, y - s*0.05);
-    ctx.lineTo(x - s*0.05, y + s*0.45);
-    ctx.moveTo(x + s*0.1, y - s*0.05);
-    ctx.lineTo(x + s*0.05, y + s*0.45);
-    ctx.stroke();
-    // 크림
-    ctx.beginPath();
-    ctx.arc(x, y - s*0.18, s*0.4, 0, Math.PI*2);
-    ctx.fillStyle = '#FFDDEE';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x, y - s*0.38, s*0.26, 0, Math.PI*2);
-    ctx.fillStyle = '#FFB3CC';
-    ctx.fill();
-    // 체리
-    ctx.beginPath();
-    ctx.arc(x, y - s*0.62, s*0.12, 0, Math.PI*2);
-    ctx.fillStyle = '#EE2244';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(x, y - s*0.5);
-    ctx.quadraticCurveTo(x + s*0.12, y - s*0.6, x + s*0.08, y - s*0.7);
-    ctx.strokeStyle = '#55AA55';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+  _drawCupcake(ctx,x,y,s) {
+    ctx.beginPath(); ctx.moveTo(x-s*0.38,y-s*0.05); ctx.lineTo(x-s*0.28,y+s*0.45);
+    ctx.lineTo(x+s*0.28,y+s*0.45); ctx.lineTo(x+s*0.38,y-s*0.05); ctx.closePath();
+    ctx.fillStyle='#C4854A'; ctx.fill();
+    ctx.strokeStyle='#A8683A'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x-s*0.1,y-s*0.05); ctx.lineTo(x-s*0.05,y+s*0.45);
+    ctx.moveTo(x+s*0.1,y-s*0.05); ctx.lineTo(x+s*0.05,y+s*0.45); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y-s*0.18,s*0.4,0,Math.PI*2); ctx.fillStyle='#FFDDEE'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y-s*0.38,s*0.26,0,Math.PI*2); ctx.fillStyle='#FFB3CC'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y-s*0.62,s*0.12,0,Math.PI*2); ctx.fillStyle='#EE2244'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x,y-s*0.5); ctx.quadraticCurveTo(x+s*0.12,y-s*0.6,x+s*0.08,y-s*0.7);
+    ctx.strokeStyle='#55AA55'; ctx.lineWidth=2; ctx.stroke();
   }
 
-  _drawCocktail(ctx, x, y, s) {
-    // 잔 stem + base
-    ctx.beginPath();
-    ctx.moveTo(x, y + s*0.12);
-    ctx.lineTo(x, y + s*0.44);
-    ctx.strokeStyle = '#BBBBCC';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.22, y + s*0.44);
-    ctx.lineTo(x + s*0.22, y + s*0.44);
-    ctx.strokeStyle = '#BBBBCC';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // 음료 — 잔의 60% 채움 (liquid level: y-s*0.18, half-width: s*0.264)
+  _drawCocktail(ctx,x,y,s) {
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.12); ctx.lineTo(x,y+s*0.44); ctx.strokeStyle='#BBBBCC'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-s*0.22,y+s*0.44); ctx.lineTo(x+s*0.22,y+s*0.44); ctx.stroke();
     ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x, y + s*0.12);            // V 바닥 꼭짓점
-    ctx.lineTo(x - s*0.264, y - s*0.18);  // 액체 왼쪽
-    ctx.lineTo(x + s*0.264, y - s*0.18);  // 액체 오른쪽
-    ctx.closePath();
-    const grad = ctx.createLinearGradient(x, y - s*0.18, x, y + s*0.12);
-    grad.addColorStop(0, '#FF88BB');
-    grad.addColorStop(1, '#FFCC66');
-    ctx.fillStyle = grad;
-    ctx.globalAlpha = 0.85;
-    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.12); ctx.lineTo(x-s*0.264,y-s*0.18); ctx.lineTo(x+s*0.264,y-s*0.18); ctx.closePath();
+    const g=ctx.createLinearGradient(x,y-s*0.18,x,y+s*0.12);
+    g.addColorStop(0,'#FF88BB'); g.addColorStop(1,'#FFCC66');
+    ctx.fillStyle=g; ctx.globalAlpha=0.85; ctx.fill();
     ctx.restore();
-
-    // 잔 테두리 (V 삼각형)
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.44, y - s*0.38);
-    ctx.lineTo(x, y + s*0.12);
-    ctx.lineTo(x + s*0.44, y - s*0.38);
-    ctx.strokeStyle = '#DDEEFF';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    // 윗 가로선
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.44, y - s*0.38);
-    ctx.lineTo(x + s*0.44, y - s*0.38);
-    ctx.stroke();
-
-    // 우산 꼬치
-    ctx.beginPath();
-    ctx.moveTo(x + s*0.08, y - s*0.38);
-    ctx.lineTo(x + s*0.28, y - s*0.72);
-    ctx.strokeStyle = '#AA8844';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // 우산 반원
-    ctx.beginPath();
-    ctx.arc(x + s*0.28, y - s*0.72, s*0.16, Math.PI, 0);
-    ctx.fillStyle = '#FF3388';
-    ctx.fill();
-    ctx.strokeStyle = '#CC1166';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // 우산 살 두 개
-    ctx.strokeStyle = '#CC1166';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + s*0.28, y - s*0.72);
-    ctx.lineTo(x + s*0.14, y - s*0.72);
-    ctx.moveTo(x + s*0.28, y - s*0.72);
-    ctx.lineTo(x + s*0.42, y - s*0.72);
-    ctx.stroke();
-
-    // 체리
-    ctx.beginPath();
-    ctx.arc(x - s*0.12, y - s*0.38, s*0.07, 0, Math.PI*2);
-    ctx.fillStyle = '#EE2244';
-    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x-s*0.44,y-s*0.38); ctx.lineTo(x,y+s*0.12); ctx.lineTo(x+s*0.44,y-s*0.38);
+    ctx.strokeStyle='#DDEEFF'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-s*0.44,y-s*0.38); ctx.lineTo(x+s*0.44,y-s*0.38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+s*0.08,y-s*0.38); ctx.lineTo(x+s*0.28,y-s*0.72); ctx.strokeStyle='#AA8844'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x+s*0.28,y-s*0.72,s*0.16,Math.PI,0); ctx.fillStyle='#FF3388'; ctx.fill(); ctx.strokeStyle='#CC1166'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='#CC1166'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+s*0.28,y-s*0.72); ctx.lineTo(x+s*0.14,y-s*0.72); ctx.moveTo(x+s*0.28,y-s*0.72); ctx.lineTo(x+s*0.42,y-s*0.72); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x-s*0.12,y-s*0.38,s*0.07,0,Math.PI*2); ctx.fillStyle='#EE2244'; ctx.fill();
   }
 
-  _drawFlower(ctx, x, y, s) {
-    // 줄기
-    ctx.beginPath();
-    ctx.moveTo(x, y + s*0.1);
-    ctx.lineTo(x, y + s*0.44);
-    ctx.strokeStyle = '#44AA44';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    // 잎
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(x + s*0.13, y + s*0.3, s*0.13, s*0.07, -Math.PI/4, 0, Math.PI*2);
-    ctx.fillStyle = '#55BB55';
-    ctx.fill();
-    ctx.restore();
-    // 꽃잎 6개
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2;
-      const px = x + Math.cos(angle) * s*0.2;
-      const py = y + Math.sin(angle) * s*0.2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(px, py, s*0.13, s*0.09, angle, 0, Math.PI*2);
-      ctx.fillStyle = i % 2 === 0 ? '#FF88BB' : '#FFBBDD';
-      ctx.fill();
-      ctx.restore();
+  _drawFlower(ctx,x,y,s) {
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.1); ctx.lineTo(x,y+s*0.44); ctx.strokeStyle='#44AA44'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.save(); ctx.beginPath(); ctx.ellipse(x+s*0.13,y+s*0.3,s*0.13,s*0.07,-Math.PI/4,0,Math.PI*2); ctx.fillStyle='#55BB55'; ctx.fill(); ctx.restore();
+    for (let i=0; i<6; i++) {
+      const ang=(i/6)*Math.PI*2, px=x+Math.cos(ang)*s*0.2, py=y+Math.sin(ang)*s*0.2;
+      ctx.save(); ctx.beginPath(); ctx.ellipse(px,py,s*0.13,s*0.09,ang,0,Math.PI*2);
+      ctx.fillStyle=i%2===0?'#FF88BB':'#FFBBDD'; ctx.fill(); ctx.restore();
     }
-    // 꽃 중심
-    ctx.beginPath();
-    ctx.arc(x, y, s*0.11, 0, Math.PI*2);
-    ctx.fillStyle = '#FFDD44';
-    ctx.fill();
-    ctx.strokeStyle = '#DDAA00';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,s*0.11,0,Math.PI*2); ctx.fillStyle='#FFDD44'; ctx.fill(); ctx.strokeStyle='#DDAA00'; ctx.lineWidth=1.5; ctx.stroke();
   }
 }
 
 // ── Accessory ─────────────────────────────────────────────
 class Accessory {
   constructor(type, idx) {
-    this.type = type;
-    this.idx  = idx;
-    this.worn = false;
-    this.wornSide = 'right';
-    this.dragging = false;
-    this.x = 0; this.y = 0;
-    this._syncPanel();
+    this.type=type; this.idx=idx;
+    this.worn=false; this.wornSide='right'; this.dragging=false;
+    this.x=0; this.y=0; this._syncPanel();
   }
-
   _syncPanel() {
-    const pw = Math.min(W * 0.13, 72);
-    this.panelX = 8 + pw / 2;
-    this.panelY = H * 0.09 + this.idx * H * 0.10;
-    if (!this.worn && !this.dragging) { this.x = this.panelX; this.y = this.panelY; }
+    const pw=Math.min(W*0.13,72);
+    this.panelX=8+pw/2; this.panelY=H*0.09+this.idx*H*0.10;
+    if (!this.worn && !this.dragging) { this.x=this.panelX; this.y=this.panelY; }
   }
-
-  get _panelS() { return Math.min(W * 0.08, 50); }
-  get _wornS()  {
-    const r = pig.r;
-    if (this.type === 'crown')   return r * 0.65;
-    if (this.type === 'ribbon' || this.type === 'ribbon_purple') return r * 0.42;
-
-    return r * 0.82; // glasses — 눈 간격에 맞춘 비율
+  get _panelS() { return Math.min(W*0.08,50); }
+  get _wornS() {
+    const r=pig.r;
+    if (this.type==='crown') return r*0.65;
+    if (this.type==='ribbon'||this.type==='ribbon_purple') return r*0.42;
+    if (this.type==='beanie') return r*0.65;
+    if (this.type==='scarf')  return r*0.68;
+    return r*0.82;
   }
-
   _wornPos() {
-    const { cx, cy, r } = pig;
-    if (this.type === 'crown')  return { x: cx, y: cy - r * 1.18 };
-    if (this.type === 'ribbon' || this.type === 'ribbon_purple') {
-      const sign = this.wornSide === 'left' ? -1 : 1;
-      return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
+    const {cx,cy,r}=pig;
+    if (this.type==='crown') return {x:cx, y:cy-r*1.18};
+    if (this.type==='ribbon'||this.type==='ribbon_purple') {
+      const sign=this.wornSide==='left'?-1:1;
+      return {x:cx+sign*r*0.42, y:cy-r*0.72};
     }
-
-    return { x: cx, y: cy - r * 0.1 }; // glasses — 눈 높이에 정렬
+    if (this.type==='beanie') return {x:cx, y:cy-r*1.02};
+    if (this.type==='scarf')  return {x:cx, y:cy+r*0.52};
+    return {x:cx, y:cy-r*0.1};
   }
-
   hitTest(mx, my) {
-    const { x, y } = this.worn ? this._wornPos() : this;
-    const s = this.worn ? this._wornS : this._panelS;
-    return Math.hypot(mx - x, my - y) < s * 0.85;
+    let hx, hy;
+    if (this.worn) { const p=this._wornPos(); hx=p.x; hy=p.y; }
+    else if (this.dragging) { hx=this.x; hy=this.y; }
+    else {
+      hx=this.panelX; hy=this.panelY-panelScroll;
+      const pw=Math.min(W*0.13,72);
+      if (mx<8||mx>8+pw||my<H*0.04||my>H*0.04+H*0.44) return false;
+    }
+    const s=this.worn?this._wornS:this._panelS;
+    return Math.hypot(mx-hx, my-hy) < s*0.85;
   }
-
   startDrag() {
-    if (this.worn) { const p = this._wornPos(); this.x = p.x; this.y = p.y; this.worn = false; }
-    this.dragging = true;
+    if (this.worn) { const p=this._wornPos(); this.x=p.x; this.y=p.y; this.worn=false; }
+    this.dragging=true;
   }
-
-  moveTo(x, y) { if (this.dragging) { this.x = x; this.y = y; } }
-
+  moveTo(x,y) { if(this.dragging){this.x=x;this.y=y;} }
   endDrag() {
-    this.dragging = false;
-    if (Math.hypot(this.x - pig.cx, this.y - pig.cy) < pig.r * 1.8) {
-      this.worn = true;
-      if (this.type === 'ribbon' || this.type === 'ribbon_purple') {
-        const dl = Math.hypot(this.x - (pig.cx - pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
-        const dr = Math.hypot(this.x - (pig.cx + pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
-        this.wornSide = dl < dr ? 'left' : 'right';
+    this.dragging=false;
+    if (Math.hypot(this.x-pig.cx, this.y-pig.cy) < pig.r*1.8) {
+      this.worn=true;
+      if (this.type==='ribbon'||this.type==='ribbon_purple') {
+        const dl=Math.hypot(this.x-(pig.cx-pig.r*0.42), this.y-(pig.cy-pig.r*0.72));
+        const dr=Math.hypot(this.x-(pig.cx+pig.r*0.42), this.y-(pig.cy-pig.r*0.72));
+        this.wornSide=dl<dr?'left':'right';
       }
-    } else {
-      this.worn = false; this.x = this.panelX; this.y = this.panelY;
-    }
+    } else { this.worn=false; this.x=this.panelX; this.y=this.panelY; }
   }
-
   draw(ctx) {
-    const { x, y } = this.worn ? this._wornPos() : this;
-    const s = this.worn ? this._wornS : this._panelS;
-    if (this.type === 'crown')               this._crown(ctx, x, y, s);
-    else if (this.type === 'ribbon')         this._ribbon(ctx, x, y, s, '#FF1493', '#CC0066', '#FF55AA');
-    else if (this.type === 'ribbon_purple')  this._ribbon(ctx, x, y, s, '#9933CC', '#6611AA', '#BB55EE');
-    else                                     this._glasses(ctx, x, y, s);
+    const {x,y}=this.worn?this._wornPos():this;
+    const s=this.worn?this._wornS:this._panelS;
+    if (this.type==='crown')              this._crown(ctx,x,y,s);
+    else if (this.type==='ribbon')        this._ribbon(ctx,x,y,s,'#FF1493','#CC0066','#FF55AA');
+    else if (this.type==='ribbon_purple') this._ribbon(ctx,x,y,s,'#9933CC','#6611AA','#BB55EE');
+    else if (this.type==='beanie')        this._beanie(ctx,x,y,s);
+    else if (this.type==='scarf')         this._scarf(ctx,x,y,s);
+    else                                  this._glasses(ctx,x,y,s);
   }
-
-  _crown(ctx, x, y, s) {
+  _crown(ctx,x,y,s) {
     ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.5, y + s*0.35);
-    ctx.lineTo(x - s*0.5, y + s*0.05);
-    ctx.lineTo(x - s*0.15, y - s*0.38);
-    ctx.lineTo(x,          y - s*0.62);
-    ctx.lineTo(x + s*0.15, y - s*0.38);
-    ctx.lineTo(x + s*0.5,  y + s*0.05);
-    ctx.lineTo(x + s*0.5,  y + s*0.35);
-    ctx.closePath();
-    ctx.fillStyle = '#FFD700';
-    ctx.fill();
-    ctx.strokeStyle = '#BF9B00';
-    ctx.lineWidth = Math.max(1.5, s * 0.04);
-    ctx.stroke();
-    for (const [gx, gy, gc] of [
-      [x,          y - s*0.57, '#FF99CC'],
-      [x - s*0.28, y + s*0.0,  '#99DDFF'],
-      [x + s*0.28, y + s*0.0,  '#AAFFAA'],
-    ]) {
-      ctx.beginPath();
-      ctx.arc(gx, gy, Math.max(2, s*0.1), 0, Math.PI*2);
-      ctx.fillStyle = gc; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x-s*0.5,y+s*0.35); ctx.lineTo(x-s*0.5,y+s*0.05); ctx.lineTo(x-s*0.15,y-s*0.38);
+    ctx.lineTo(x,y-s*0.62); ctx.lineTo(x+s*0.15,y-s*0.38); ctx.lineTo(x+s*0.5,y+s*0.05); ctx.lineTo(x+s*0.5,y+s*0.35); ctx.closePath();
+    ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#BF9B00'; ctx.lineWidth=Math.max(1.5,s*0.04); ctx.stroke();
+    for (const [gx,gy,gc] of [[x,y-s*0.57,'#FF99CC'],[x-s*0.28,y,'#99DDFF'],[x+s*0.28,y,'#AAFFAA']]) {
+      ctx.beginPath(); ctx.arc(gx,gy,Math.max(2,s*0.1),0,Math.PI*2); ctx.fillStyle=gc; ctx.fill();
     }
     ctx.restore();
   }
-
-  _ribbon(ctx, x, y, s, c1, c2, c3) {
-    ctx.save();
-    ctx.lineWidth = Math.max(1.5, s * 0.04);
-    for (const sign of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.bezierCurveTo(x + sign*s*0.15, y - s*0.45, x + sign*s*0.6, y - s*0.3, x + sign*s*0.55, y);
-      ctx.bezierCurveTo(x + sign*s*0.6,  y + s*0.3,  x + sign*s*0.15, y + s*0.45, x, y);
-      ctx.fillStyle = c1; ctx.fill();
-      ctx.strokeStyle = c2; ctx.stroke();
+  _ribbon(ctx,x,y,s,c1,c2,c3) {
+    ctx.save(); ctx.lineWidth=Math.max(1.5,s*0.04);
+    for (const sign of [-1,1]) {
+      ctx.beginPath(); ctx.moveTo(x,y);
+      ctx.bezierCurveTo(x+sign*s*0.15,y-s*0.45, x+sign*s*0.6,y-s*0.3, x+sign*s*0.55,y);
+      ctx.bezierCurveTo(x+sign*s*0.6,y+s*0.3, x+sign*s*0.15,y+s*0.45, x,y);
+      ctx.fillStyle=c1; ctx.fill(); ctx.strokeStyle=c2; ctx.stroke();
     }
-    ctx.beginPath();
-    ctx.arc(x, y, s*0.13, 0, Math.PI*2);
-    ctx.fillStyle = c3; ctx.fill();
-    ctx.strokeStyle = c2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,s*0.13,0,Math.PI*2); ctx.fillStyle=c3; ctx.fill(); ctx.strokeStyle=c2; ctx.stroke();
     ctx.restore();
   }
-
-  _glasses(ctx, x, y, s) {
+  _glasses(ctx,x,y,s) {
     ctx.save();
-    const fw = s*0.42, fh = s*0.32, gap = s*0.12, rad = Math.max(2, s*0.06);
-    ctx.lineWidth = Math.max(2, s*0.06);
-    ctx.strokeStyle = '#55AADD';
-    ctx.fillStyle = 'rgba(135,206,235,0.28)';
-    // 왼쪽 렌즈
-    ctx.beginPath(); ctx.roundRect(x - gap - fw, y - fh/2, fw, fh, rad); ctx.fill(); ctx.stroke();
-    // 오른쪽 렌즈
-    ctx.beginPath(); ctx.roundRect(x + gap, y - fh/2, fw, fh, rad); ctx.fill(); ctx.stroke();
-    // 브릿지
-    ctx.beginPath(); ctx.moveTo(x - gap, y + fh*0.05); ctx.lineTo(x + gap, y + fh*0.05); ctx.stroke();
-    // 안경다리
+    const fw=s*0.42,fh=s*0.32,gap=s*0.12,rad=Math.max(2,s*0.06);
+    ctx.lineWidth=Math.max(2,s*0.06); ctx.strokeStyle='#55AADD'; ctx.fillStyle='rgba(135,206,235,0.28)';
+    ctx.beginPath(); ctx.roundRect(x-gap-fw,y-fh/2,fw,fh,rad); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(x+gap,y-fh/2,fw,fh,rad); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-gap,y+fh*0.05); ctx.lineTo(x+gap,y+fh*0.05); ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(x - gap - fw, y + fh*0.05); ctx.lineTo(x - gap - fw - s*0.22, y + fh*0.18);
-    ctx.moveTo(x + gap + fw, y + fh*0.05); ctx.lineTo(x + gap + fw + s*0.22, y + fh*0.18);
-    ctx.stroke();
+    ctx.moveTo(x-gap-fw,y+fh*0.05); ctx.lineTo(x-gap-fw-s*0.22,y+fh*0.18);
+    ctx.moveTo(x+gap+fw,y+fh*0.05); ctx.lineTo(x+gap+fw+s*0.22,y+fh*0.18);
+    ctx.stroke(); ctx.restore();
+  }
+  _beanie(ctx,x,y,s) {
+    ctx.save();
+    // 돔
+    ctx.beginPath(); ctx.arc(x,y+s*0.1,s*0.5,Math.PI,0); ctx.closePath();
+    ctx.fillStyle='#FF6633'; ctx.fill();
+    // 줄무늬
+    for (const yo of [s*0.04,-s*0.09]) {
+      ctx.save(); ctx.beginPath(); ctx.arc(x,y+s*0.1,s*0.5,Math.PI,0); ctx.closePath(); ctx.clip();
+      ctx.fillStyle='rgba(255,255,255,0.33)'; ctx.fillRect(x-s*0.55,y+yo,s*1.1,s*0.1); ctx.restore();
+    }
+    // 챙
+    ctx.beginPath(); ctx.roundRect(x-s*0.52,y+s*0.1,s*1.04,s*0.2,3);
+    ctx.fillStyle='#CC4411'; ctx.fill(); ctx.strokeStyle='#AA2200'; ctx.lineWidth=1.5; ctx.stroke();
+    // 방울
+    ctx.beginPath(); ctx.arc(x,y-s*0.4,s*0.14,0,Math.PI*2);
+    ctx.fillStyle='#FFEECC'; ctx.fill(); ctx.strokeStyle='#DDCCAA'; ctx.lineWidth=1; ctx.stroke();
     ctx.restore();
   }
-
-
+  _scarf(ctx,x,y,s) {
+    ctx.save();
+    // 메인 밴드
+    ctx.beginPath(); ctx.ellipse(x,y,s*0.52,s*0.16,0,0,Math.PI*2);
+    ctx.fillStyle='#2299BB'; ctx.fill(); ctx.strokeStyle='#0077AA'; ctx.lineWidth=1.5; ctx.stroke();
+    // 세로 줄무늬
+    ctx.save(); ctx.beginPath(); ctx.ellipse(x,y,s*0.52,s*0.16,0,0,Math.PI*2); ctx.clip();
+    for (let i=-2; i<=2; i++) {
+      ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(x+i*s*0.18-s*0.04,y-s*0.2,s*0.08,s*0.4);
+    }
+    ctx.restore();
+    // 늘어지는 끝
+    for (const sign of [-1,1]) {
+      ctx.beginPath();
+      ctx.moveTo(x+sign*s*0.17,y+s*0.1);
+      ctx.quadraticCurveTo(x+sign*s*0.22,y+s*0.44, x+sign*s*0.11,y+s*0.56);
+      ctx.quadraticCurveTo(x+sign*s*0.03,y+s*0.44, x+sign*s*0.08,y+s*0.1);
+      ctx.closePath(); ctx.fillStyle='#2299BB'; ctx.fill(); ctx.strokeStyle='#0077AA'; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
+// ── Panel background ──────────────────────────────────────
 function drawAccessoryPanel() {
-  const pw = Math.min(W * 0.13, 72);
-  const ph = H * 0.44;
+  const pw=Math.min(W*0.13,72), ph=H*0.44;
   ctx.save();
-  ctx.fillStyle = 'rgba(255,240,250,0.62)';
-  ctx.strokeStyle = 'rgba(255,175,210,0.7)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(8, H * 0.04, pw, ph, 18);
-  ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(255,240,250,0.62)'; ctx.strokeStyle='rgba(255,175,210,0.7)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(8,H*0.04,pw,ph,18); ctx.fill(); ctx.stroke();
+  // 스크롤바
+  if (panelMaxScroll > 0) {
+    const barH=Math.max(18, ph*ph/(ph+panelMaxScroll));
+    const barY=H*0.04+(ph-barH)*(panelScroll/panelMaxScroll);
+    ctx.fillStyle='rgba(220,160,200,0.35)';
+    ctx.beginPath(); ctx.roundRect(8+pw-5,H*0.04+3,3,ph-6,2); ctx.fill();
+    ctx.fillStyle='rgba(180,80,160,0.62)';
+    ctx.beginPath(); ctx.roundRect(8+pw-5,barY,3,barH,2); ctx.fill();
+  }
   ctx.restore();
 }
 
-// ── Background ────────────────────────────────────────────
-function drawBg() {
-  // Sky
-  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62);
-  sky.addColorStop(0, '#87CEEB');
-  sky.addColorStop(1, '#C5E8F5');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, H);
-
-  // Grass
-  const gy = H * 0.6;
-  const grass = ctx.createLinearGradient(0, gy, 0, H);
-  grass.addColorStop(0, '#88C34A');
-  grass.addColorStop(1, '#4E8A20');
-  ctx.fillStyle = grass;
-  ctx.fillRect(0, gy, W, H - gy);
-
-  // Ground shadow under pig
+// ── Background + Clouds ───────────────────────────────────
+function drawCloud(cx,cy,cr) {
   ctx.save();
-  ctx.globalAlpha = 0.22;
-  ctx.fillStyle = '#2A5000';
-  ctx.beginPath();
-  ctx.ellipse(W/2, gy + H*0.015, W*0.11, H*0.018, 0, 0, Math.PI*2);
-  ctx.fill();
+  ctx.fillStyle=rainTimer>0?'rgba(170,185,200,0.95)':'rgba(255,255,255,0.92)';
+  ctx.shadowColor='rgba(100,140,200,0.2)'; ctx.shadowBlur=8;
+  for (const [dx,dy,dr] of [[0,0,1],[-0.65,0.25,0.72],[0.65,0.25,0.72],[0.28,-0.38,0.65],[-0.28,-0.38,0.65]]) {
+    ctx.beginPath(); ctx.arc(cx+dx*cr,cy+dy*cr,cr*dr,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBg() {
+  const s1=rainTimer>0?'#7AAABB':'#87CEEB', s2=rainTimer>0?'#A0B8C5':'#C5E8F5';
+  const sky=ctx.createLinearGradient(0,0,0,H*0.62);
+  sky.addColorStop(0,s1); sky.addColorStop(1,s2);
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+  const gy=H*0.6;
+  const grass=ctx.createLinearGradient(0,gy,0,H);
+  grass.addColorStop(0,'#88C34A'); grass.addColorStop(1,'#4E8A20');
+  ctx.fillStyle=grass; ctx.fillRect(0,gy,W,H-gy);
+
+  ctx.save(); ctx.globalAlpha=0.22; ctx.fillStyle='#2A5000';
+  ctx.beginPath(); ctx.ellipse(W/2,gy+H*0.015,W*0.11,H*0.018,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+  // 구름
+  for (const c of CLOUDS) drawCloud(c.rx*W, c.ry*H, c.rs*Math.min(W,H));
+}
+
+function drawRain() {
+  if (rainTimer<=0) return;
+  ctx.save();
+  ctx.fillStyle='rgba(80,120,180,0.07)'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(130,180,240,0.62)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+  for (const d of rainDrops) {
+    ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-2,d.y+d.len); ctx.stroke();
+  }
   ctx.restore();
 }
 
 // ── Init ──────────────────────────────────────────────────
-const pig = new Pig(W / 2);
+const pig = new Pig(W/2);
 const foods = [
-  new Food('cupcake',  W * 0.18, H * 0.78),
-  new Food('cocktail', W * 0.82, H * 0.78),
-  new Food('flower',   W * 0.5,  H * 0.84),
+  new Food('cupcake',  W*0.18, H*0.78),
+  new Food('cocktail', W*0.82, H*0.78),
+  new Food('flower',   W*0.5,  H*0.84),
 ];
 const accessories = [
   new Accessory('crown',         0),
   new Accessory('ribbon',        1),
   new Accessory('ribbon_purple', 2),
   new Accessory('glasses',       3),
+  new Accessory('beanie',        4),
+  new Accessory('scarf',         5),
 ];
+updatePanelMaxScroll();
 
-function getXY(e) {
-  const t = e.changedTouches ? e.changedTouches[0] : e;
-  return [t.clientX, t.clientY];
+function getXY(e) { const t=e.changedTouches?e.changedTouches[0]:e; return [t.clientX,t.clientY]; }
+
+let draggedFood=null, draggedAcc=null, lastPetX=null, draggedEar=-1;
+
+function checkPetting(x,y) {
+  if (Math.hypot(x-pig.cx, y-(pig.cy-pig.r*0.55)) < pig.r*0.45) {
+    const moved=lastPetX!==null?Math.abs(x-lastPetX):0;
+    if (moved>3) pig.petLevel=Math.min(1,pig.petLevel+0.055);
+    lastPetX=x;
+  } else { lastPetX=null; }
 }
 
-let draggedFood = null;
-let draggedAcc  = null;
-let lastPetX    = null;
-
-function checkPetting(x, y) {
-  // 이마 중앙 영역: 머리 위쪽 중심부
-  const foreheadX = pig.cx;
-  const foreheadY = pig.cy - pig.r * 0.55;
-  if (Math.hypot(x - foreheadX, y - foreheadY) < pig.r * 0.45) {
-    const moved = lastPetX !== null ? Math.abs(x - lastPetX) : 0;
-    if (moved > 3) pig.petLevel = Math.min(1, pig.petLevel + 0.055);
-    lastPetX = x;
-  } else {
-    lastPetX = null;
+function onDown(x,y) {
+  // 구름 → 비
+  if (cloudHit(x,y)) { if(rainTimer<=0)initRain(); rainTimer=120; return; }
+  // 악세서리
+  for (const a of accessories) { if(a.hitTest(x,y)){draggedAcc=a;a.startDrag();return;} }
+  // 패널 빈 공간 → 스크롤
+  const pw=Math.min(W*0.13,72);
+  if (x<8+pw && y>H*0.04 && y<H*0.04+H*0.44) {
+    panelDragging=true; panelDragStartY=y; panelScrollStart=panelScroll; return;
   }
-}
-
-function onDown(x, y) {
-  // 악세서리 먼저
-  for (const a of accessories) {
-    if (a.hitTest(x, y)) { draggedAcc = a; a.startDrag(); return; }
-  }
+  // 귀
+  const eIdx=pig.earHitTest(x,y);
+  if (eIdx>=0) { draggedEar=eIdx; pig.startEarDrag(eIdx); return; }
   // 음식
-  for (const f of foods) {
-    if (f.hitTest(x, y)) { draggedFood = f; f.startDrag(); return; }
-  }
-  pig.pointerDown(x, y);
+  for (const f of foods) { if(f.hitTest(x,y)){draggedFood=f;f.startDrag();return;} }
+  // 돼지
+  if (pig.pointerDown(x,y)) playBoing();
 }
 
-function onMove(x, y) {
-  checkPetting(x, y);
-  if (draggedAcc) {
-    draggedAcc.moveTo(x, y);
-  } else if (draggedFood) {
-    draggedFood.moveTo(x, y);
-    if (draggedFood.type === 'flower') {
-      // 코(snout)에 가져다대면 sniff 액션 — 꽃은 먹지 않고 원위치
-      const snoutX = pig.cx, snoutY = pig.cy + pig.r * 0.2;
-      if (Math.hypot(x - snoutX, y - snoutY) < pig.r * 0.48) {
-        pig.sniff(); draggedFood.endDrag(); draggedFood = null;
-      }
+function onMove(x,y) {
+  if (panelDragging) {
+    panelScroll=Math.max(0,Math.min(panelMaxScroll, panelScrollStart-(y-panelDragStartY))); return;
+  }
+  checkPetting(x,y);
+  if (draggedAcc) { draggedAcc.moveTo(x,y); }
+  else if (draggedEar>=0) { pig.moveEarDrag(draggedEar,x,y); }
+  else if (draggedFood) {
+    draggedFood.moveTo(x,y);
+    if (draggedFood.type==='flower') {
+      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.48) { pig.sniff(); draggedFood.endDrag(); draggedFood=null; }
     } else {
-      const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
-      if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
-        draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood = null;
-      }
+      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.5) { draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood=null; }
     }
-  } else {
-    pig.pointerMove(x, y);
-  }
+  } else { pig.pointerMove(x,y); }
 }
 
-function onUp(x, y) {
-  if (draggedAcc)        { draggedAcc.endDrag(); draggedAcc = null; }
-  else if (draggedFood)  { draggedFood.endDrag(); draggedFood = null; }
-  else pig.pointerUp(x, y);
+function onUp(x,y) {
+  if (panelDragging) { panelDragging=false; return; }
+  if (draggedAcc)       { draggedAcc.endDrag(); draggedAcc=null; }
+  else if (draggedEar>=0) { pig.endEarDrag(); draggedEar=-1; }
+  else if (draggedFood) { draggedFood.endDrag(); draggedFood=null; }
+  else pig.pointerUp(x,y);
 }
 
-canvas.addEventListener('mousedown', e => onDown(...getXY(e)));
-canvas.addEventListener('mousemove', e => onMove(...getXY(e)));
-canvas.addEventListener('mouseup', e => onUp(...getXY(e)));
-canvas.addEventListener('mouseleave', () => {
-  if (draggedAcc)  { draggedAcc.endDrag();  draggedAcc = null; }
-  if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
+canvas.addEventListener('mousedown', e=>onDown(...getXY(e)));
+canvas.addEventListener('mousemove', e=>onMove(...getXY(e)));
+canvas.addEventListener('mouseup',   e=>onUp(...getXY(e)));
+canvas.addEventListener('mouseleave', ()=>{
+  panelDragging=false;
+  if(draggedAcc){draggedAcc.endDrag();draggedAcc=null;}
+  if(draggedEar>=0){pig.endEarDrag();draggedEar=-1;}
+  if(draggedFood){draggedFood.endDrag();draggedFood=null;}
   pig.pointerUp();
 });
-canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchmove',  e => { e.preventDefault(); onMove(...getXY(e)); }, { passive: false });
-canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(...getXY(e));   }, { passive: false });
+canvas.addEventListener('touchstart', e=>{e.preventDefault();onDown(...getXY(e));},{passive:false});
+canvas.addEventListener('touchmove',  e=>{e.preventDefault();onMove(...getXY(e));},{passive:false});
+canvas.addEventListener('touchend',   e=>{e.preventDefault();onUp(...getXY(e));},{passive:false});
+canvas.addEventListener('wheel', e=>{
+  const pw=Math.min(W*0.13,72);
+  if(e.clientX<8+pw&&e.clientY>H*0.04&&e.clientY<H*0.04+H*0.44){
+    panelScroll=Math.max(0,Math.min(panelMaxScroll,panelScroll+e.deltaY*0.4));
+    e.preventDefault();
+  }
+},{passive:false});
 
-// ── resize 시 악세서리 패널 위치 갱신 ─────────────────────
-window.addEventListener('resize', () => {
+window.addEventListener('resize', ()=>{
   resize();
-  pig.resetAt(W / 2);
-  if (typeof foods !== 'undefined') {
-    foods[0].rx = W*0.18; foods[0].ry = H*0.78;
-    foods[1].rx = W*0.82; foods[1].ry = H*0.78;
-    foods[2].rx = W*0.5;  foods[2].ry = H*0.84;
-    foods.forEach(f => { if (!f.dragging) { f.x = f.rx; f.y = f.ry; } });
-  }
-  if (typeof accessories !== 'undefined') {
-    accessories.forEach(a => a._syncPanel());
-  }
+  pig.resetAt(W/2);
+  foods[0].rx=W*0.18; foods[0].ry=H*0.78;
+  foods[1].rx=W*0.82; foods[1].ry=H*0.78;
+  foods[2].rx=W*0.5;  foods[2].ry=H*0.84;
+  foods.forEach(f=>{if(!f.dragging){f.x=f.rx;f.y=f.ry;}});
+  accessories.forEach(a=>a._syncPanel());
+  updatePanelMaxScroll();
 });
 
 // ── Loop ──────────────────────────────────────────────────
 (function loop() {
   requestAnimationFrame(loop);
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0,0,W,H);
   drawBg();
+  drawRain();
   drawAccessoryPanel();
 
-  foods.forEach(f => f.update());
+  // Rain update
+  if (rainTimer > 0) {
+    rainTimer--;
+    for (const d of rainDrops) {
+      d.y += d.speed;
+      if (d.y > H*0.65) { d.y=-d.len; d.x=Math.random()*W; }
+    }
+  }
+
+  foods.forEach(f=>f.update());
   pig.update();
 
-  // 패널 악세서리 (돼지 뒤)
-  accessories.forEach(a => { if (!a.worn && a !== draggedAcc) a.draw(ctx); });
-  // 바닥 음식 (돼지 뒤)
-  foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
-  // 돼지
+  // 패널 아이템 (클립 + 스크롤)
+  const pw=Math.min(W*0.13,72), ph=H*0.44;
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(8,H*0.04,pw,ph,18); ctx.clip();
+  ctx.translate(0,-panelScroll);
+  accessories.forEach(a=>{ if(!a.worn&&!a.dragging) a.draw(ctx); });
+  ctx.restore();
+
+  foods.forEach(f=>{ if(f!==draggedFood) f.draw(ctx); });
   pig.draw(ctx);
-  // 착용 악세서리 (돼지 위)
-  accessories.forEach(a => { if (a.worn && a !== draggedAcc) a.draw(ctx); });
-  // 드래그 중인 것들 (최상위)
-  if (draggedFood) draggedFood.draw(ctx);
-  if (draggedAcc)  draggedAcc.draw(ctx);
+  accessories.forEach(a=>{ if(a.worn&&!a.dragging) a.draw(ctx); });
+  if(draggedFood) draggedFood.draw(ctx);
+  if(draggedAcc)  draggedAcc.draw(ctx);
 })();
 </script>
 </body>
