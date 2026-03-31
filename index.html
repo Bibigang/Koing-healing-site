@@ -420,9 +420,12 @@ class Tail {
   // Returns [ox, oy] offset from pig center in pig.r units
   static _off(i) {
     const t = i / (Tail.N - 1);
-    const cx = 0.548, cy = 0.616;    // spiral center inside pig body (right-lower area)
-    const rs = 0.24 - 0.22 * t;     // tapering radius: thick at base, thin at tip
-    const angle = t * 4 * Math.PI;  // 2 full clockwise turns; tangent at t=0 points DOWN
+    // Spiral center is OUTSIDE the pig body (to the right of the attachment)
+    // Attachment point: (0.788, 0.616)*r = body boundary at ~38° below horizontal right
+    // center = attachment + (rs, 0) so attachment is at angle=π (west) of center
+    const cx = 1.10, cy = 0.616;
+    const rs = 0.31 - 0.28 * t;              // thick at base (0.31r), thin at tip (0.03r)
+    const angle = Math.PI - t * 4 * Math.PI; // base at west of center; tangent → DOWN first; 2 counter-CW turns
     return [cx + rs * Math.cos(angle), cy + rs * Math.sin(angle)];
   }
 
