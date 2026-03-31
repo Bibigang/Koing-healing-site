@@ -80,6 +80,7 @@ class Pig {
     this.dragIdx = -1;
     this.active = false;
     this.petLevel = 0;
+    this.drunkTimer = 0;
   }
 
   constructor(x) { this.resetAt(x); }
@@ -182,8 +183,9 @@ class Pig {
     }
   }
 
-  eat() {
-    this.eatTimer = 100; // 먹고 나서 행복한 표정 유지 시간
+  eat(type) {
+    if (type === 'cocktail') this.drunkTimer = 180; // 칵테일: ~ ~ 눈 3초
+    this.eatTimer = 100;
     this.jiggle();
   }
 
@@ -321,7 +323,30 @@ class Pig {
     // 먹는 중이면 무조건 행복 표정
     if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
 
-    if (this.petLevel > 0.3) {
+    if (draggedTail) {
+      // 꼬리 터치 중: X X 눈
+      ctx.strokeStyle = '#442233';
+      for (const sign of [-1, 1]) {
+        const eyeCx = cx + sign * ex;
+        ctx.beginPath();
+        ctx.moveTo(eyeCx - er, ey - er*0.5);
+        ctx.lineTo(eyeCx + er, ey + er*0.5);
+        ctx.moveTo(eyeCx + er, ey - er*0.5);
+        ctx.lineTo(eyeCx - er, ey + er*0.5);
+        ctx.stroke();
+      }
+    } else if (this.drunkTimer > 0) {
+      this.drunkTimer--;
+      // 칵테일 먹은 후: ~ ~ 눈
+      ctx.strokeStyle = '#442233';
+      for (const sign of [-1, 1]) {
+        const eyeCx = cx + sign * ex;
+        ctx.beginPath();
+        ctx.moveTo(eyeCx - er, ey);
+        ctx.bezierCurveTo(eyeCx - er*0.3, ey - er*0.9, eyeCx + er*0.3, ey + er*0.9, eyeCx + er, ey);
+        ctx.stroke();
+      }
+    } else if (this.petLevel > 0.3) {
       // 황홀 표정: 원래 ∩ 눈이 U로 뒤집힘
       ctx.strokeStyle = '#442233';
       for (const sign of [-1, 1]) {
@@ -564,14 +589,14 @@ class Food {
   markEaten() {
     this.eaten = true;
     this.dragging = false;
-    this.respawn = 180; // 3초 후 부활
+    this.respawn = 120; // 2초 후 부활
   }
 
   draw(ctx) {
     if (this.eaten) return;
     const { x, y, size: s } = this;
     if (this.type === 'cupcake') this._drawCupcake(ctx, x, y, s);
-    else this._drawWater(ctx, x, y, s);
+    else this._drawCocktail(ctx, x, y, s);
   }
 
   _drawCupcake(ctx, x, y, s) {
@@ -615,39 +640,82 @@ class Food {
     ctx.stroke();
   }
 
-  _drawWater(ctx, x, y, s) {
-    // 컵 모양
+  _drawCocktail(ctx, x, y, s) {
+    // 잔 stem + base
     ctx.beginPath();
-    ctx.moveTo(x - s*0.32, y - s*0.42);
-    ctx.lineTo(x - s*0.38, y + s*0.42);
-    ctx.lineTo(x + s*0.38, y + s*0.42);
-    ctx.lineTo(x + s*0.32, y - s*0.42);
-    ctx.closePath();
-    ctx.fillStyle = '#E8F8FF';
-    ctx.fill();
-    ctx.strokeStyle = '#88CCEE';
+    ctx.moveTo(x, y + s*0.12);
+    ctx.lineTo(x, y + s*0.44);
+    ctx.strokeStyle = '#BBBBCC';
     ctx.lineWidth = 2.5;
     ctx.stroke();
-    // 물 (파란 부분)
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.22, y + s*0.44);
+    ctx.lineTo(x + s*0.22, y + s*0.44);
+    ctx.strokeStyle = '#BBBBCC';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // 잔 안 내용물 (V 삼각형 채우기)
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x - s*0.32, y - s*0.42);
-    ctx.lineTo(x - s*0.38, y + s*0.42);
-    ctx.lineTo(x + s*0.38, y + s*0.42);
-    ctx.lineTo(x + s*0.32, y - s*0.42);
+    ctx.moveTo(x - s*0.44, y - s*0.38);
+    ctx.lineTo(x, y + s*0.12);
+    ctx.lineTo(x + s*0.44, y - s*0.38);
     ctx.closePath();
     ctx.clip();
-    ctx.fillStyle = '#55AAFF';
-    ctx.globalAlpha = 0.45;
-    ctx.fillRect(x - s*0.4, y + s*0.0, s*0.8, s*0.5);
+    // 핑크-오렌지 그라디언트
+    const grad = ctx.createLinearGradient(x, y - s*0.38, x, y + s*0.12);
+    grad.addColorStop(0, '#FF88BB');
+    grad.addColorStop(1, '#FFCC66');
+    ctx.fillStyle = grad;
+    ctx.globalAlpha = 0.82;
+    ctx.fill();
     ctx.restore();
-    // 빨대
+
+    // 잔 테두리 (V 삼각형)
     ctx.beginPath();
-    ctx.moveTo(x + s*0.15, y - s*0.42);
-    ctx.lineTo(x + s*0.25, y - s*0.85);
-    ctx.strokeStyle = '#FF8899';
-    ctx.lineWidth = 3;
+    ctx.moveTo(x - s*0.44, y - s*0.38);
+    ctx.lineTo(x, y + s*0.12);
+    ctx.lineTo(x + s*0.44, y - s*0.38);
+    ctx.strokeStyle = '#DDEEFF';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
+    // 윗 가로선
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.44, y - s*0.38);
+    ctx.lineTo(x + s*0.44, y - s*0.38);
+    ctx.stroke();
+
+    // 우산 꼬치
+    ctx.beginPath();
+    ctx.moveTo(x + s*0.08, y - s*0.38);
+    ctx.lineTo(x + s*0.28, y - s*0.72);
+    ctx.strokeStyle = '#AA8844';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // 우산 반원
+    ctx.beginPath();
+    ctx.arc(x + s*0.28, y - s*0.72, s*0.16, Math.PI, 0);
+    ctx.fillStyle = '#FF3388';
+    ctx.fill();
+    ctx.strokeStyle = '#CC1166';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // 우산 살 두 개
+    ctx.strokeStyle = '#CC1166';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + s*0.28, y - s*0.72);
+    ctx.lineTo(x + s*0.14, y - s*0.72);
+    ctx.moveTo(x + s*0.28, y - s*0.72);
+    ctx.lineTo(x + s*0.42, y - s*0.72);
+    ctx.stroke();
+
+    // 체리
+    ctx.beginPath();
+    ctx.arc(x - s*0.12, y - s*0.38, s*0.07, 0, Math.PI*2);
+    ctx.fillStyle = '#EE2244';
+    ctx.fill();
   }
 }
 
@@ -835,7 +903,7 @@ const pig = new Pig(W / 2);
 const tail = new Tail();
 const foods = [
   new Food('cupcake', W * 0.18, H * 0.78),
-  new Food('water',   W * 0.82, H * 0.78),
+  new Food('cocktail', W * 0.82, H * 0.78),
 ];
 const accessories = [
   new Accessory('crown',   0),
@@ -892,7 +960,7 @@ function onMove(x, y) {
     draggedFood.moveTo(x, y);
     const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
     if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
-      draggedFood.markEaten(); pig.eat(); draggedFood = null;
+      draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood = null;
     }
   } else {
     pig.pointerMove(x, y);
