@@ -9,10 +9,47 @@
     body { overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; background: #87CEEB; }
     canvas { display: block; cursor: grab; }
     canvas:active { cursor: grabbing; }
+
+    #bubble {
+      position: fixed;
+      left: 50%; top: 40%;
+      transform: translateX(-50%) translateY(-100%);
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 18px;
+      padding: 11px 17px;
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.07);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      max-width: 200px;
+      text-align: center;
+      line-height: 1.55;
+      white-space: pre-line;
+      z-index: 10;
+    }
+    #bubble.visible { opacity: 1; }
+    #bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 9px solid transparent;
+      border-right: 9px solid transparent;
+      border-top: 9px solid rgba(255,255,255,0.82);
+    }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="bubble"><span id="bubble-text"></span></div>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -809,9 +846,9 @@ function onMove(x,y) {
   else if (draggedFood) {
     draggedFood.moveTo(x,y);
     if (draggedFood.type==='flower') {
-      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.48) { pig.sniff(); draggedFood.endDrag(); draggedFood=null; }
+      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.48) { pig.sniff(); showBubble('flower'); draggedFood.endDrag(); draggedFood=null; }
     } else {
-      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.5) { draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood=null; }
+      if (Math.hypot(x-pig.cx, y-(pig.cy+pig.r*0.2)) < pig.r*0.5) { const _t=draggedFood.type; draggedFood.markEaten(); pig.eat(_t); showBubble(_t); draggedFood=null; }
     }
   } else { pig.pointerMove(x,y); }
 }
@@ -890,6 +927,62 @@ window.addEventListener('resize', ()=>{
   if(draggedFood) draggedFood.draw(ctx);
   if(draggedAcc)  draggedAcc.draw(ctx);
 })();
+
+// ── Speech Bubble ─────────────────────────────────────────
+const MSGS = {
+  flower: [
+    '이 정도면 잘했다 ㅇㅇ',
+    '향기로 버티는 거 인정',
+    '꽃도 받을 자격 있음',
+    '오늘 하루도 버텼네',
+    '살아있는 거 자체가 성과임',
+    '잠깐이라도 힐링됐으면 됨',
+    '오늘은 그냥 넘어가자',
+    '넌 꽃 받아 마땅한 사람임',
+    '숨만 쉬어도 잘하는 중임',
+    '이것도 못 챙겨주면 내가 미안하잖아',
+  ],
+  cupcake: [
+    '먹는 게 남는 거임',
+    '칼로리는 내일의 내가 알아서 함',
+    '이 정도 보상은 받아야지',
+    '오늘 이거 하나로 충분함',
+    '달면 삼키면 됨',
+    '오늘 한 번쯤은 무조건 허용',
+    '잘 먹었고 잘 할 거임',
+    '단 거 없으면 못 버팀',
+    '컵케이크 먹을 자격 있음 ㅇㅇ',
+    '먹으면서 힘내',
+  ],
+  cocktail: [
+    '스트레스는 희석시키면 됨',
+    '오늘 좀 취해도 됨',
+    '인생 원래 이런 거 있음',
+    '내일의 나는 내일의 내가 책임짐',
+    '한 잔이면 충분히 이해됨',
+    '이 정도면 쉬어갈 타이밍임',
+    '감정은 음료로 처리 가능함',
+    '오늘은 이유 묻지 않음',
+    '그냥 마셔 나중에 생각해',
+    '한 잔하고 생각하자',
+  ],
+};
+const _bubbleEl = document.getElementById('bubble');
+const _bubbleText = document.getElementById('bubble-text');
+let _bubbleTimer = null;
+function showBubble(category) {
+  const list = MSGS[category];
+  _bubbleText.textContent = list[Math.floor(Math.random() * list.length)];
+  const bx = pig.cx, by = pig.cy - pig.r * 1.5;
+  _bubbleEl.style.left = bx + 'px';
+  _bubbleEl.style.top  = by + 'px';
+  _bubbleEl.style.transform = 'translateX(-50%) translateY(-100%)';
+  _bubbleEl.classList.remove('visible');
+  void _bubbleEl.offsetWidth;
+  _bubbleEl.classList.add('visible');
+  if (_bubbleTimer) clearTimeout(_bubbleTimer);
+  _bubbleTimer = setTimeout(() => _bubbleEl.classList.remove('visible'), 2600);
+}
 </script>
 </body>
 </html>
