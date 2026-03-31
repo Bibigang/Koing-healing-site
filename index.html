@@ -948,10 +948,10 @@ window.addEventListener('resize', () => {
   accessories.forEach(a => { if (!a.worn && a !== draggedAcc) a.draw(ctx); });
   // 바닥 음식 (돼지 뒤)
   foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
+  // 꼬리 (돼지 뒤)
+  tail.draw(ctx);
   // 돼지
   pig.draw(ctx);
-  // 꼬리 (돼지 위)
-  tail.draw(ctx);
   // 착용 악세서리 (돼지 위)
   accessories.forEach(a => { if (a.worn && a !== draggedAcc) a.draw(ctx); });
   // 드래그 중인 것들 (최상위)
