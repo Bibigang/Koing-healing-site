@@ -330,19 +330,7 @@ class Pig {
     // 먹는 중이면 무조건 행복 표정
     if (this.eatTimer > 0) { this.eatTimer--; s = 0; }
 
-    if (draggedTail) {
-      // 꼬리 터치 중: X X 눈
-      ctx.strokeStyle = '#442233';
-      for (const sign of [-1, 1]) {
-        const eyeCx = cx + sign * ex;
-        ctx.beginPath();
-        ctx.moveTo(eyeCx - er, ey - er*0.5);
-        ctx.lineTo(eyeCx + er, ey + er*0.5);
-        ctx.moveTo(eyeCx + er, ey - er*0.5);
-        ctx.lineTo(eyeCx - er, ey + er*0.5);
-        ctx.stroke();
-      }
-    } else if (this.drunkTimer > 0) {
+    if (this.drunkTimer > 0) {
       this.drunkTimer--;
       // 칵테일 먹은 후: ~ ~ 눈
       ctx.strokeStyle = '#442233';
@@ -439,122 +427,6 @@ class Pig {
       ctx.quadraticCurveTo(cx - r*0.03, my + r*0.06, cx, my - r*0.01);
       ctx.quadraticCurveTo(cx + r*0.03, my - r*0.07, cx + r*0.1, my + r*0.01);
       ctx.stroke();
-    }
-    ctx.restore();
-  }
-}
-
-// ── Tail ──────────────────────────────────────────────────
-class Tail {
-  static N = 22;
-
-  // Parametric spiral: base at lower-right body boundary, DOWN-first clockwise, 2 turns, tapers
-  // Returns [ox, oy] offset from pig center in pig.r units
-  static _off(i) {
-    const t = i / (Tail.N - 1);
-    // Pig tail shape: 3 cubic Bézier segments in pig.r units from pig center.
-    // Exits body at lower-right boundary → sweeps down-right → loops back up-left → small inner curl.
-    const segs = [
-      // 시작점 낮추고 위로 먼저 올라가며 오른쪽으로 루프
-      [[0.80,0.65],[1.08,0.22],[1.48,0.38],[1.38,0.72]],
-      // 루프 바닥에서 왼쪽으로 돌아 위로 올라오며 끝
-      [[1.38,0.72],[1.18,0.86],[0.88,0.66],[1.02,0.38]],
-    ];
-    const ns = segs.length;
-    const raw = t * ns;
-    const si = Math.min(Math.floor(raw), ns - 1);
-    const lt = raw - si;
-    const [p0, p1, p2, p3] = segs[si];
-    const u = 1 - lt;
-    return [
-      u*u*u*p0[0] + 3*u*u*lt*p1[0] + 3*u*lt*lt*p2[0] + lt*lt*lt*p3[0],
-      u*u*u*p0[1] + 3*u*u*lt*p1[1] + 3*u*lt*lt*p2[1] + lt*lt*lt*p3[1],
-    ];
-  }
-
-  constructor() { this.draggingIdx = -1; this.pts = []; this._init(); }
-
-  _init() {
-    this.pts = Array.from({ length: Tail.N }, (_, i) => {
-      const [ox, oy] = Tail._off(i);
-      return { x: pig.cx + ox * pig.r, y: pig.cy + oy * pig.r, vx: 0, vy: 0 };
-    });
-  }
-
-  update() {
-    const [ox0, oy0] = Tail._off(0);
-    this.pts[0].x = pig.cx + ox0 * pig.r;
-    this.pts[0].y = pig.cy + oy0 * pig.r;
-    this.pts[0].vx = 0; this.pts[0].vy = 0;
-
-    for (let i = 1; i < Tail.N; i++) {
-      const p = this.pts[i];
-      if (this.draggingIdx === i) continue;
-      const [ox, oy] = Tail._off(i);
-      const tx = pig.cx + ox * pig.r;
-      const ty = pig.cy + oy * pig.r;
-      p.vx = (p.vx + (tx - p.x) * 0.18) * 0.72;
-      p.vy = (p.vy + (ty - p.y) * 0.18) * 0.72;
-      p.x += p.vx;
-      p.y += p.vy;
-    }
-  }
-
-  // Returns index of hit point (from tip inward), or -1 if none
-  hitTest(mx, my) {
-    const r = pig.r * 0.2;
-    for (let i = Tail.N - 1; i >= 0; i--) {
-      if (Math.hypot(mx - this.pts[i].x, my - this.pts[i].y) < r) return i;
-    }
-    return -1;
-  }
-
-  startDrag(idx) { this.draggingIdx = idx; }
-
-  moveDrag(mx, my) {
-    if (this.draggingIdx < 0) return;
-    const p = this.pts[this.draggingIdx];
-    p.x = mx; p.y = my; p.vx = 0; p.vy = 0;
-    // Pull subsequent points toward dragged position with decreasing force
-    for (let s = 1; s <= 5; s++) {
-      const ni = this.draggingIdx + s;
-      if (ni >= Tail.N) break;
-      const fac = Math.pow(0.55, s) * 0.25;
-      this.pts[ni].vx += (mx - this.pts[ni].x) * fac;
-      this.pts[ni].vy += (my - this.pts[ni].y) * fac;
-    }
-  }
-
-  endDrag() {
-    if (this.draggingIdx < 0) return;
-    const i = this.draggingIdx;
-    const [ox, oy] = Tail._off(i);
-    const tx = pig.cx + ox * pig.r;
-    const ty = pig.cy + oy * pig.r;
-    this.pts[i].vx = (tx - this.pts[i].x) * 0.28;
-    this.pts[i].vy = (ty - this.pts[i].y) * 0.28;
-    this.draggingIdx = -1;
-  }
-
-  draw(ctx) {
-    const pts = this.pts;
-    const N = Tail.N;
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // Two passes: darker outline first, then bright pink fill
-    for (let pass = 0; pass < 2; pass++) {
-      for (let i = 0; i < N - 1; i++) {
-        const t = i / (N - 1);
-        const lw = Math.max(1.5, pig.r * (0.17 - 0.14 * t));
-        ctx.lineWidth = pass === 0 ? lw + 2.5 : lw;
-        ctx.strokeStyle = pass === 0 ? '#D4789A' : '#FFB3C6';
-        ctx.beginPath();
-        ctx.moveTo(pts[i].x, pts[i].y);
-        ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
-        ctx.stroke();
-      }
     }
     ctx.restore();
   }
@@ -663,14 +535,14 @@ class Food {
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // 음료 — 잔의 아래 절반만 채움 (liquid level: y-s*0.10)
+    // 음료 — 잔의 60% 채움 (liquid level: y-s*0.18, half-width: s*0.264)
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x, y + s*0.12);          // V 바닥 꼭짓점
-    ctx.lineTo(x - s*0.19, y - s*0.10); // 액체 왼쪽
-    ctx.lineTo(x + s*0.19, y - s*0.10); // 액체 오른쪽
+    ctx.moveTo(x, y + s*0.12);            // V 바닥 꼭짓점
+    ctx.lineTo(x - s*0.264, y - s*0.18);  // 액체 왼쪽
+    ctx.lineTo(x + s*0.264, y - s*0.18);  // 액체 오른쪽
     ctx.closePath();
-    const grad = ctx.createLinearGradient(x, y - s*0.10, x, y + s*0.12);
+    const grad = ctx.createLinearGradient(x, y - s*0.18, x, y + s*0.12);
     grad.addColorStop(0, '#FF88BB');
     grad.addColorStop(1, '#FFCC66');
     ctx.fillStyle = grad;
@@ -786,7 +658,7 @@ class Accessory {
     const r = pig.r;
     if (this.type === 'crown')   return r * 0.65;
     if (this.type === 'ribbon')  return r * 0.42;
-    if (this.type === 'skirt')   return r * 0.9;
+
     return r * 0.82; // glasses — 눈 간격에 맞춘 비율
   }
 
@@ -797,7 +669,7 @@ class Accessory {
       const sign = this.wornSide === 'left' ? -1 : 1;
       return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
     }
-    if (this.type === 'skirt')  return { x: cx, y: cy + r * 0.62 };
+
     return { x: cx, y: cy - r * 0.1 }; // glasses — 눈 높이에 정렬
   }
 
@@ -833,7 +705,7 @@ class Accessory {
     const s = this.worn ? this._wornS : this._panelS;
     if (this.type === 'crown')        this._crown(ctx, x, y, s);
     else if (this.type === 'ribbon')  this._ribbon(ctx, x, y, s);
-    else if (this.type === 'skirt')   this._skirt(ctx, x, y, s);
+
     else                              this._glasses(ctx, x, y, s);
   }
 
@@ -903,46 +775,12 @@ class Accessory {
     ctx.restore();
   }
 
-  _skirt(ctx, x, y, s) {
-    ctx.save();
-    // 허리밴드
-    ctx.beginPath();
-    ctx.roundRect(x - s*0.44, y - s*0.16, s*0.88, s*0.2, 4);
-    ctx.fillStyle = '#6633BB';
-    ctx.fill();
-    ctx.strokeStyle = '#441188';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // 치마 몸통 (아래로 퍼지는 사다리꼴)
-    ctx.beginPath();
-    ctx.moveTo(x - s*0.44, y + s*0.04);
-    ctx.lineTo(x - s*0.62, y + s*0.48);
-    ctx.lineTo(x + s*0.62, y + s*0.48);
-    ctx.lineTo(x + s*0.44, y + s*0.04);
-    ctx.closePath();
-    ctx.fillStyle = '#9966DD';
-    ctx.fill();
-    ctx.strokeStyle = '#6633BB';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // 플리츠 선 5개
-    ctx.strokeStyle = '#7744CC';
-    ctx.lineWidth = 1.2;
-    for (let i = -2; i <= 2; i++) {
-      const topX = x + i * s*0.18;
-      const botX = x + i * s*0.25;
-      ctx.beginPath();
-      ctx.moveTo(topX, y + s*0.04);
-      ctx.lineTo(botX, y + s*0.48);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
+
 }
 
 function drawAccessoryPanel() {
   const pw = Math.min(W * 0.13, 72);
-  const ph = H * 0.52;
+  const ph = H * 0.38;
   ctx.save();
   ctx.fillStyle = 'rgba(255,240,250,0.62)';
   ctx.strokeStyle = 'rgba(255,175,210,0.7)';
@@ -982,7 +820,6 @@ function drawBg() {
 
 // ── Init ──────────────────────────────────────────────────
 const pig = new Pig(W / 2);
-const tail = new Tail();
 const foods = [
   new Food('cupcake',  W * 0.18, H * 0.78),
   new Food('cocktail', W * 0.82, H * 0.78),
@@ -992,7 +829,6 @@ const accessories = [
   new Accessory('crown',   0),
   new Accessory('ribbon',  1),
   new Accessory('glasses', 2),
-  new Accessory('skirt',   3),
 ];
 
 function getXY(e) {
@@ -1017,16 +853,11 @@ function checkPetting(x, y) {
   }
 }
 
-let draggedTail = false;
-
 function onDown(x, y) {
   // 악세서리 먼저
   for (const a of accessories) {
     if (a.hitTest(x, y)) { draggedAcc = a; a.startDrag(); return; }
   }
-  // 꼬리
-  const tIdx = tail.hitTest(x, y);
-  if (tIdx >= 0) { draggedTail = true; tail.startDrag(tIdx); return; }
   // 음식
   for (const f of foods) {
     if (f.hitTest(x, y)) { draggedFood = f; f.startDrag(); return; }
@@ -1038,8 +869,6 @@ function onMove(x, y) {
   checkPetting(x, y);
   if (draggedAcc) {
     draggedAcc.moveTo(x, y);
-  } else if (draggedTail) {
-    tail.moveDrag(x, y);
   } else if (draggedFood) {
     draggedFood.moveTo(x, y);
     if (draggedFood.type === 'flower') {
@@ -1060,9 +889,8 @@ function onMove(x, y) {
 }
 
 function onUp(x, y) {
-  if (draggedAcc)   { draggedAcc.endDrag(); draggedAcc = null; }
-  else if (draggedTail) { tail.endDrag(); draggedTail = false; }
-  else if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
+  if (draggedAcc)        { draggedAcc.endDrag(); draggedAcc = null; }
+  else if (draggedFood)  { draggedFood.endDrag(); draggedFood = null; }
   else pig.pointerUp(x, y);
 }
 
@@ -1091,7 +919,6 @@ window.addEventListener('resize', () => {
   if (typeof accessories !== 'undefined') {
     accessories.forEach(a => a._syncPanel());
   }
-  if (typeof tail !== 'undefined') tail._init();
 });
 
 // ── Loop ──────────────────────────────────────────────────
@@ -1103,14 +930,11 @@ window.addEventListener('resize', () => {
 
   foods.forEach(f => f.update());
   pig.update();
-  tail.update();
 
   // 패널 악세서리 (돼지 뒤)
   accessories.forEach(a => { if (!a.worn && a !== draggedAcc) a.draw(ctx); });
   // 바닥 음식 (돼지 뒤)
   foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
-  // 꼬리 (돼지 뒤)
-  tail.draw(ctx);
   // 돼지
   pig.draw(ctx);
   // 착용 악세서리 (돼지 위)
