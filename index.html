@@ -521,7 +521,7 @@ class Accessory {
       return {x:cx+sign*r*0.42, y:cy-r*0.72};
     }
     if (this.type==='beanie') return {x:cx, y:cy-r*1.02};
-    if (this.type==='scarf')  return {x:cx, y:cy+r*0.52};
+    if (this.type==='scarf')  return {x:cx, y:cy+r*0.82};
     return {x:cx, y:cy-r*0.1};
   }
   hitTest(mx, my) {
@@ -615,23 +615,35 @@ class Accessory {
   }
   _scarf(ctx,x,y,s) {
     ctx.save();
+    // 오른쪽 아래로 내려오는 끝부분 (왼쪽 제거, 오른쪽만, 두껍게)
+    ctx.beginPath();
+    ctx.moveTo(x+s*0.18, y+s*0.1);
+    ctx.quadraticCurveTo(x+s*0.32, y+s*0.44, x+s*0.24, y+s*0.62);
+    ctx.quadraticCurveTo(x+s*0.06, y+s*0.44, x+s*0.06, y+s*0.1);
+    ctx.closePath();
+    ctx.fillStyle='#2299BB'; ctx.fill(); ctx.strokeStyle='#0077AA'; ctx.lineWidth=1.5; ctx.stroke();
+    // 늘어지는 끝 가로 줄무늬 (클립)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x+s*0.18, y+s*0.1);
+    ctx.quadraticCurveTo(x+s*0.32, y+s*0.44, x+s*0.24, y+s*0.62);
+    ctx.quadraticCurveTo(x+s*0.06, y+s*0.44, x+s*0.06, y+s*0.1);
+    ctx.closePath(); ctx.clip();
+    for (let i=0; i<=4; i++) {
+      const ly = y+s*0.14+i*s*0.12;
+      ctx.fillStyle='rgba(255,255,255,0.3)';
+      ctx.fillRect(x+s*0.04, ly, s*0.3, s*0.055);
+    }
+    ctx.restore();
     // 메인 밴드
     ctx.beginPath(); ctx.ellipse(x,y,s*0.52,s*0.16,0,0,Math.PI*2);
     ctx.fillStyle='#2299BB'; ctx.fill(); ctx.strokeStyle='#0077AA'; ctx.lineWidth=1.5; ctx.stroke();
-    // 세로 줄무늬
+    // 밴드 세로 줄무늬
     ctx.save(); ctx.beginPath(); ctx.ellipse(x,y,s*0.52,s*0.16,0,0,Math.PI*2); ctx.clip();
     for (let i=-2; i<=2; i++) {
       ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(x+i*s*0.18-s*0.04,y-s*0.2,s*0.08,s*0.4);
     }
     ctx.restore();
-    // 늘어지는 끝
-    for (const sign of [-1,1]) {
-      ctx.beginPath();
-      ctx.moveTo(x+sign*s*0.17,y+s*0.1);
-      ctx.quadraticCurveTo(x+sign*s*0.22,y+s*0.44, x+sign*s*0.11,y+s*0.56);
-      ctx.quadraticCurveTo(x+sign*s*0.03,y+s*0.44, x+sign*s*0.08,y+s*0.1);
-      ctx.closePath(); ctx.fillStyle='#2299BB'; ctx.fill(); ctx.strokeStyle='#0077AA'; ctx.lineWidth=1.5; ctx.stroke();
-    }
     ctx.restore();
   }
 }
