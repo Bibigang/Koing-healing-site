@@ -416,14 +416,14 @@ class Pig {
 class Tail {
   // 꼬리 고정 모양 (pig.r 비율)
   static OFFSETS = [
-    [0.83, 0.18],
-    [0.93, 0.06],
-    [0.96, -0.07],
-    [0.89, -0.21],
-    [0.75, -0.27],
-    [0.63, -0.19],
-    [0.61, -0.04],
-    [0.70, 0.06],
+    [0.98, 0.12],   // 몸통 경계에서 시작
+    [1.12, 0.04],   // 바깥으로
+    [1.20, -0.10],  // 위로
+    [1.14, -0.24],  // 왼쪽으로 말리기
+    [0.98, -0.30],  // 꼭대기
+    [0.83, -0.22],  // 안쪽으로
+    [0.79, -0.08],  // 아래로
+    [0.88, -0.01],  // 꼬리 끝
   ];
 
   constructor() { this.dragging = false; this.pts = []; this._init(); }
@@ -487,12 +487,27 @@ class Tail {
   draw(ctx) {
     const pts = this.pts;
     ctx.save();
-    ctx.strokeStyle = '#E896A8';
-    ctx.lineWidth = Math.max(2.5, pig.r * 0.045);
+    ctx.strokeStyle = '#FFB3C6';
+    ctx.lineWidth = Math.max(6, pig.r * 0.13);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // 부드러운 곡선으로 연결
+    // 윤곽선 (약간 더 굵고 어두운 색으로 먼저)
+    ctx.strokeStyle = '#E896A8';
+    ctx.lineWidth = Math.max(8, pig.r * 0.17);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+    ctx.stroke();
+
+    // 메인 꼬리 (밝은 핑크)
+    ctx.strokeStyle = '#FFB3C6';
+    ctx.lineWidth = Math.max(6, pig.r * 0.13);
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length - 1; i++) {
@@ -506,9 +521,12 @@ class Tail {
     // 꼬리 끝 동그라미
     const tip = pts[pts.length-1];
     ctx.beginPath();
-    ctx.arc(tip.x, tip.y, pig.r * 0.07, 0, Math.PI*2);
-    ctx.fillStyle = '#E896A8';
+    ctx.arc(tip.x, tip.y, pig.r * 0.09, 0, Math.PI*2);
+    ctx.fillStyle = '#FFB3C6';
     ctx.fill();
+    ctx.strokeStyle = '#E896A8';
+    ctx.lineWidth = Math.max(2, pig.r * 0.03);
+    ctx.stroke();
     ctx.restore();
   }
 }
