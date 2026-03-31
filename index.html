@@ -81,6 +81,7 @@ class Pig {
     this.active = false;
     this.petLevel = 0;
     this.drunkTimer = 0;
+    this.sniffTimer = 0;
   }
 
   constructor(x) { this.resetAt(x); }
@@ -184,9 +185,13 @@ class Pig {
   }
 
   eat(type) {
-    if (type === 'cocktail') this.drunkTimer = 180; // 칵테일: ~ ~ 눈 3초
+    if (type === 'cocktail') this.drunkTimer = 60; // 칵테일: ~ ~ 눈 1초
     this.eatTimer = 100;
     this.jiggle();
+  }
+
+  sniff() {
+    this.sniffTimer = 120; // 2초간 콧구멍 펄럭
   }
 
   pointerMove(x, y) {
@@ -294,11 +299,13 @@ class Pig {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Nostrils — 하트 모양 (세로로 길게)
+    // Nostrils — 하트 모양 (세로로 길게), sniff 중엔 펄럭
+    if (this.sniffTimer > 0) this.sniffTimer--;
+    const sniffScale = this.sniffTimer > 0 ? 1 + 0.7 * Math.abs(Math.sin(this.sniffTimer * 0.25)) : 1;
     ctx.fillStyle = '#BB5570';
     for (const nx of [cx - r*0.12, cx + r*0.12]) {
       const ny = cy + r*0.2;
-      const hw = r*0.038, hh = r*0.1;
+      const hw = r*0.038 * sniffScale, hh = r*0.1 * sniffScale;
       ctx.beginPath();
       ctx.moveTo(nx, ny + hh*0.6);
       ctx.bezierCurveTo(nx - hw*2, ny + hh*0.1, nx - hw*2, ny - hh*0.9, nx, ny - hh*0.35);
@@ -589,14 +596,15 @@ class Food {
   markEaten() {
     this.eaten = true;
     this.dragging = false;
-    this.respawn = 120; // 2초 후 부활
+    this.respawn = 45; // 0.75초 후 부활
   }
 
   draw(ctx) {
     if (this.eaten) return;
     const { x, y, size: s } = this;
     if (this.type === 'cupcake') this._drawCupcake(ctx, x, y, s);
-    else this._drawCocktail(ctx, x, y, s);
+    else if (this.type === 'cocktail') this._drawCocktail(ctx, x, y, s);
+    else this._drawFlower(ctx, x, y, s);
   }
 
   _drawCupcake(ctx, x, y, s) {
@@ -655,20 +663,18 @@ class Food {
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // 잔 안 내용물 (V 삼각형 채우기)
+    // 음료 — 잔의 아래 절반만 채움 (liquid level: y-s*0.10)
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x - s*0.44, y - s*0.38);
-    ctx.lineTo(x, y + s*0.12);
-    ctx.lineTo(x + s*0.44, y - s*0.38);
+    ctx.moveTo(x, y + s*0.12);          // V 바닥 꼭짓점
+    ctx.lineTo(x - s*0.19, y - s*0.10); // 액체 왼쪽
+    ctx.lineTo(x + s*0.19, y - s*0.10); // 액체 오른쪽
     ctx.closePath();
-    ctx.clip();
-    // 핑크-오렌지 그라디언트
-    const grad = ctx.createLinearGradient(x, y - s*0.38, x, y + s*0.12);
+    const grad = ctx.createLinearGradient(x, y - s*0.10, x, y + s*0.12);
     grad.addColorStop(0, '#FF88BB');
     grad.addColorStop(1, '#FFCC66');
     ctx.fillStyle = grad;
-    ctx.globalAlpha = 0.82;
+    ctx.globalAlpha = 0.85;
     ctx.fill();
     ctx.restore();
 
@@ -717,6 +723,43 @@ class Food {
     ctx.fillStyle = '#EE2244';
     ctx.fill();
   }
+
+  _drawFlower(ctx, x, y, s) {
+    // 줄기
+    ctx.beginPath();
+    ctx.moveTo(x, y + s*0.1);
+    ctx.lineTo(x, y + s*0.44);
+    ctx.strokeStyle = '#44AA44';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // 잎
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(x + s*0.13, y + s*0.3, s*0.13, s*0.07, -Math.PI/4, 0, Math.PI*2);
+    ctx.fillStyle = '#55BB55';
+    ctx.fill();
+    ctx.restore();
+    // 꽃잎 6개
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const px = x + Math.cos(angle) * s*0.2;
+      const py = y + Math.sin(angle) * s*0.2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(px, py, s*0.13, s*0.09, angle, 0, Math.PI*2);
+      ctx.fillStyle = i % 2 === 0 ? '#FF88BB' : '#FFBBDD';
+      ctx.fill();
+      ctx.restore();
+    }
+    // 꽃 중심
+    ctx.beginPath();
+    ctx.arc(x, y, s*0.11, 0, Math.PI*2);
+    ctx.fillStyle = '#FFDD44';
+    ctx.fill();
+    ctx.strokeStyle = '#DDAA00';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
 }
 
 // ── Accessory ─────────────────────────────────────────────
@@ -743,6 +786,7 @@ class Accessory {
     const r = pig.r;
     if (this.type === 'crown')   return r * 0.65;
     if (this.type === 'ribbon')  return r * 0.42;
+    if (this.type === 'skirt')   return r * 0.9;
     return r * 0.82; // glasses — 눈 간격에 맞춘 비율
   }
 
@@ -753,6 +797,7 @@ class Accessory {
       const sign = this.wornSide === 'left' ? -1 : 1;
       return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
     }
+    if (this.type === 'skirt')  return { x: cx, y: cy + r * 0.62 };
     return { x: cx, y: cy - r * 0.1 }; // glasses — 눈 높이에 정렬
   }
 
@@ -786,9 +831,10 @@ class Accessory {
   draw(ctx) {
     const { x, y } = this.worn ? this._wornPos() : this;
     const s = this.worn ? this._wornS : this._panelS;
-    if (this.type === 'crown')   this._crown(ctx, x, y, s);
-    else if (this.type === 'ribbon') this._ribbon(ctx, x, y, s);
-    else                         this._glasses(ctx, x, y, s);
+    if (this.type === 'crown')        this._crown(ctx, x, y, s);
+    else if (this.type === 'ribbon')  this._ribbon(ctx, x, y, s);
+    else if (this.type === 'skirt')   this._skirt(ctx, x, y, s);
+    else                              this._glasses(ctx, x, y, s);
   }
 
   _crown(ctx, x, y, s) {
@@ -856,11 +902,47 @@ class Accessory {
     ctx.stroke();
     ctx.restore();
   }
+
+  _skirt(ctx, x, y, s) {
+    ctx.save();
+    // 허리밴드
+    ctx.beginPath();
+    ctx.roundRect(x - s*0.44, y - s*0.16, s*0.88, s*0.2, 4);
+    ctx.fillStyle = '#6633BB';
+    ctx.fill();
+    ctx.strokeStyle = '#441188';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // 치마 몸통 (아래로 퍼지는 사다리꼴)
+    ctx.beginPath();
+    ctx.moveTo(x - s*0.44, y + s*0.04);
+    ctx.lineTo(x - s*0.62, y + s*0.48);
+    ctx.lineTo(x + s*0.62, y + s*0.48);
+    ctx.lineTo(x + s*0.44, y + s*0.04);
+    ctx.closePath();
+    ctx.fillStyle = '#9966DD';
+    ctx.fill();
+    ctx.strokeStyle = '#6633BB';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // 플리츠 선 5개
+    ctx.strokeStyle = '#7744CC';
+    ctx.lineWidth = 1.2;
+    for (let i = -2; i <= 2; i++) {
+      const topX = x + i * s*0.18;
+      const botX = x + i * s*0.25;
+      ctx.beginPath();
+      ctx.moveTo(topX, y + s*0.04);
+      ctx.lineTo(botX, y + s*0.48);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 function drawAccessoryPanel() {
   const pw = Math.min(W * 0.13, 72);
-  const ph = H * 0.38;
+  const ph = H * 0.52;
   ctx.save();
   ctx.fillStyle = 'rgba(255,240,250,0.62)';
   ctx.strokeStyle = 'rgba(255,175,210,0.7)';
@@ -902,13 +984,15 @@ function drawBg() {
 const pig = new Pig(W / 2);
 const tail = new Tail();
 const foods = [
-  new Food('cupcake', W * 0.18, H * 0.78),
+  new Food('cupcake',  W * 0.18, H * 0.78),
   new Food('cocktail', W * 0.82, H * 0.78),
+  new Food('flower',   W * 0.5,  H * 0.84),
 ];
 const accessories = [
   new Accessory('crown',   0),
   new Accessory('ribbon',  1),
   new Accessory('glasses', 2),
+  new Accessory('skirt',   3),
 ];
 
 function getXY(e) {
@@ -958,9 +1042,17 @@ function onMove(x, y) {
     tail.moveDrag(x, y);
   } else if (draggedFood) {
     draggedFood.moveTo(x, y);
-    const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
-    if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
-      draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood = null;
+    if (draggedFood.type === 'flower') {
+      // 코(snout)에 가져다대면 sniff 액션 — 꽃은 먹지 않고 원위치
+      const snoutX = pig.cx, snoutY = pig.cy + pig.r * 0.2;
+      if (Math.hypot(x - snoutX, y - snoutY) < pig.r * 0.48) {
+        pig.sniff(); draggedFood.endDrag(); draggedFood = null;
+      }
+    } else {
+      const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
+      if (Math.hypot(x - mouthX, y - mouthY) < pig.r * 0.5) {
+        draggedFood.markEaten(); pig.eat(draggedFood.type); draggedFood = null;
+      }
     }
   } else {
     pig.pointerMove(x, y);
@@ -993,6 +1085,7 @@ window.addEventListener('resize', () => {
   if (typeof foods !== 'undefined') {
     foods[0].rx = W*0.18; foods[0].ry = H*0.78;
     foods[1].rx = W*0.82; foods[1].ry = H*0.78;
+    foods[2].rx = W*0.5;  foods[2].ry = H*0.84;
     foods.forEach(f => { if (!f.dragging) { f.x = f.rx; f.y = f.ry; } });
   }
   if (typeof accessories !== 'undefined') {
