@@ -649,7 +649,7 @@ class Accessory {
   _syncPanel() {
     const pw = Math.min(W * 0.13, 72);
     this.panelX = 8 + pw / 2;
-    this.panelY = H * 0.09 + this.idx * H * 0.13;
+    this.panelY = H * 0.09 + this.idx * H * 0.10;
     if (!this.worn && !this.dragging) { this.x = this.panelX; this.y = this.panelY; }
   }
 
@@ -657,7 +657,7 @@ class Accessory {
   get _wornS()  {
     const r = pig.r;
     if (this.type === 'crown')   return r * 0.65;
-    if (this.type === 'ribbon')  return r * 0.42;
+    if (this.type === 'ribbon' || this.type === 'ribbon_purple') return r * 0.42;
 
     return r * 0.82; // glasses — 눈 간격에 맞춘 비율
   }
@@ -665,7 +665,7 @@ class Accessory {
   _wornPos() {
     const { cx, cy, r } = pig;
     if (this.type === 'crown')  return { x: cx, y: cy - r * 1.18 };
-    if (this.type === 'ribbon') {
+    if (this.type === 'ribbon' || this.type === 'ribbon_purple') {
       const sign = this.wornSide === 'left' ? -1 : 1;
       return { x: cx + sign * r * 0.42, y: cy - r * 0.72 };
     }
@@ -690,7 +690,7 @@ class Accessory {
     this.dragging = false;
     if (Math.hypot(this.x - pig.cx, this.y - pig.cy) < pig.r * 1.8) {
       this.worn = true;
-      if (this.type === 'ribbon') {
+      if (this.type === 'ribbon' || this.type === 'ribbon_purple') {
         const dl = Math.hypot(this.x - (pig.cx - pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
         const dr = Math.hypot(this.x - (pig.cx + pig.r*0.42), this.y - (pig.cy - pig.r*0.72));
         this.wornSide = dl < dr ? 'left' : 'right';
@@ -703,10 +703,10 @@ class Accessory {
   draw(ctx) {
     const { x, y } = this.worn ? this._wornPos() : this;
     const s = this.worn ? this._wornS : this._panelS;
-    if (this.type === 'crown')        this._crown(ctx, x, y, s);
-    else if (this.type === 'ribbon')  this._ribbon(ctx, x, y, s);
-
-    else                              this._glasses(ctx, x, y, s);
+    if (this.type === 'crown')               this._crown(ctx, x, y, s);
+    else if (this.type === 'ribbon')         this._ribbon(ctx, x, y, s, '#FF1493', '#CC0066', '#FF55AA');
+    else if (this.type === 'ribbon_purple')  this._ribbon(ctx, x, y, s, '#9933CC', '#6611AA', '#BB55EE');
+    else                                     this._glasses(ctx, x, y, s);
   }
 
   _crown(ctx, x, y, s) {
@@ -737,7 +737,7 @@ class Accessory {
     ctx.restore();
   }
 
-  _ribbon(ctx, x, y, s) {
+  _ribbon(ctx, x, y, s, c1, c2, c3) {
     ctx.save();
     ctx.lineWidth = Math.max(1.5, s * 0.04);
     for (const sign of [-1, 1]) {
@@ -745,13 +745,13 @@ class Accessory {
       ctx.moveTo(x, y);
       ctx.bezierCurveTo(x + sign*s*0.15, y - s*0.45, x + sign*s*0.6, y - s*0.3, x + sign*s*0.55, y);
       ctx.bezierCurveTo(x + sign*s*0.6,  y + s*0.3,  x + sign*s*0.15, y + s*0.45, x, y);
-      ctx.fillStyle = '#FF1493'; ctx.fill();
-      ctx.strokeStyle = '#CC0066'; ctx.stroke();
+      ctx.fillStyle = c1; ctx.fill();
+      ctx.strokeStyle = c2; ctx.stroke();
     }
     ctx.beginPath();
     ctx.arc(x, y, s*0.13, 0, Math.PI*2);
-    ctx.fillStyle = '#FF55AA'; ctx.fill();
-    ctx.strokeStyle = '#CC0066'; ctx.stroke();
+    ctx.fillStyle = c3; ctx.fill();
+    ctx.strokeStyle = c2; ctx.stroke();
     ctx.restore();
   }
 
@@ -780,7 +780,7 @@ class Accessory {
 
 function drawAccessoryPanel() {
   const pw = Math.min(W * 0.13, 72);
-  const ph = H * 0.38;
+  const ph = H * 0.44;
   ctx.save();
   ctx.fillStyle = 'rgba(255,240,250,0.62)';
   ctx.strokeStyle = 'rgba(255,175,210,0.7)';
@@ -826,9 +826,10 @@ const foods = [
   new Food('flower',   W * 0.5,  H * 0.84),
 ];
 const accessories = [
-  new Accessory('crown',   0),
-  new Accessory('ribbon',  1),
-  new Accessory('glasses', 2),
+  new Accessory('crown',         0),
+  new Accessory('ribbon',        1),
+  new Accessory('glasses',       2),
+  new Accessory('ribbon_purple', 3),
 ];
 
 function getXY(e) {
