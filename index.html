@@ -423,10 +423,10 @@ class Tail {
     // Pig tail shape: 3 cubic Bézier segments in pig.r units from pig center.
     // Exits body at lower-right boundary → sweeps down-right → loops back up-left → small inner curl.
     const segs = [
-      // Seg 1: 몸통에서 오른쪽으로 뻗어 아래로 루프
-      [[0.956,0.292],[1.22,0.28],[1.42,0.60],[1.18,0.76]],
-      // Seg 2: 루프 끝에서 위로 치솟아 시작선 위로 교차 (➰ 수직 반전)
-      [[1.18,0.76],[0.94,0.78],[0.94,0.30],[1.16,0.12]],
+      // 시작점 낮추고 위로 먼저 올라가며 오른쪽으로 루프
+      [[0.80,0.65],[1.08,0.22],[1.48,0.38],[1.38,0.72]],
+      // 루프 바닥에서 왼쪽으로 돌아 위로 올라오며 끝
+      [[1.38,0.72],[1.18,0.86],[0.88,0.66],[1.02,0.38]],
     ];
     const ns = segs.length;
     const raw = t * ns;
