@@ -423,12 +423,10 @@ class Tail {
     // Pig tail shape: 3 cubic Bézier segments in pig.r units from pig center.
     // Exits body at lower-right boundary → sweeps down-right → loops back up-left → small inner curl.
     const segs = [
-      // Seg 1: exit body going down-right, extending outward
-      [[0.82,0.57],[0.98,0.68],[1.32,0.72],[1.48,0.58]],
-      // Seg 2: arc back up-left completing the main sideways loop
-      [[1.48,0.58],[1.60,0.36],[1.28,0.22],[0.94,0.38]],
-      // Seg 3: small inner curl toward tip
-      [[0.94,0.38],[0.90,0.48],[0.88,0.60],[1.06,0.54]],
+      // Seg 1: exit body going right, sweep down in a big arc
+      [[0.940,0.342],[1.30,0.26],[1.46,0.54],[1.26,0.74]],
+      // Seg 2: tip curl — from bottom of arc, curls back up
+      [[1.26,0.74],[1.14,0.84],[0.98,0.68],[1.10,0.50]],
     ];
     const ns = segs.length;
     const raw = t * ns;
