@@ -82,6 +82,8 @@ class Pig {
     this.petLevel = 0;
     this.drunkTimer = 0;
     this.sniffTimer = 0;
+    this.fatTimer = 0;
+    this.cupcakeEatTimes = [];
   }
 
   constructor(x) { this.resetAt(x); }
@@ -132,6 +134,7 @@ class Pig {
 
   update() {
     this.petLevel = Math.max(0, this.petLevel - 0.012); // 천천히 식음
+    if (this.fatTimer > 0) this.fatTimer--;
     this.updateCenter();
     for (let i = 0; i < N; i++) {
       const p = this.pts[i];
@@ -185,7 +188,16 @@ class Pig {
   }
 
   eat(type) {
-    if (type === 'cocktail') this.drunkTimer = 60; // 칵테일: ~ ~ 눈 1초
+    if (type === 'cocktail') this.drunkTimer = 60;
+    if (type === 'cupcake') {
+      const now = Date.now();
+      this.cupcakeEatTimes = this.cupcakeEatTimes.filter(t => now - t < 5000);
+      this.cupcakeEatTimes.push(now);
+      if (this.cupcakeEatTimes.length >= 3) {
+        this.fatTimer = 120; // 2초 뚱뚱
+        this.cupcakeEatTimes = [];
+      }
+    }
     this.eatTimer = 100;
     this.jiggle();
   }
@@ -235,6 +247,17 @@ class Pig {
     const bodyColor = lerpColor('#FFB3C6', '#FF5577', Math.min(s / 0.5, 1));
     const strokeColor = lerpColor('#E896A8', '#CC3355', Math.min(s / 0.5, 1));
 
+    // 뚱뚱 효과: 중심 기준 sine 팽창 (부드럽게 부풀었다 꺼짐)
+    const fatScale = this.fatTimer > 0
+      ? 1 + 0.38 * Math.sin(Math.PI * (1 - this.fatTimer / 120))
+      : 1;
+    if (fatScale !== 1) {
+      ctx.save();
+      ctx.translate(this.cx, this.cy);
+      ctx.scale(fatScale, fatScale);
+      ctx.translate(-this.cx, -this.cy);
+    }
+
     // Ears behind body
     this._drawEar(ctx, this.cx - this.r * 0.52, this.cy - this.r * 0.78);
     this._drawEar(ctx, this.cx + this.r * 0.52, this.cy - this.r * 0.78);
@@ -258,6 +281,7 @@ class Pig {
     ctx.stroke();
 
     this._drawFace(ctx, s);
+    if (fatScale !== 1) ctx.restore();
   }
 
   _drawEar(ctx, x, y) {
@@ -828,8 +852,8 @@ const foods = [
 const accessories = [
   new Accessory('crown',         0),
   new Accessory('ribbon',        1),
-  new Accessory('glasses',       2),
-  new Accessory('ribbon_purple', 3),
+  new Accessory('ribbon_purple', 2),
+  new Accessory('glasses',       3),
 ];
 
 function getXY(e) {
