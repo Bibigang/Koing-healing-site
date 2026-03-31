@@ -412,6 +412,107 @@ class Pig {
   }
 }
 
+// ── Tail ──────────────────────────────────────────────────
+class Tail {
+  // 꼬리 고정 모양 (pig.r 비율)
+  static OFFSETS = [
+    [0.83, 0.18],
+    [0.93, 0.06],
+    [0.96, -0.07],
+    [0.89, -0.21],
+    [0.75, -0.27],
+    [0.63, -0.19],
+    [0.61, -0.04],
+    [0.70, 0.06],
+  ];
+
+  constructor() { this.dragging = false; this.pts = []; this._init(); }
+
+  _init() {
+    this.pts = Tail.OFFSETS.map(([ox, oy]) => ({
+      x: pig.cx + ox * pig.r,
+      y: pig.cy + oy * pig.r,
+      vx: 0, vy: 0, ox, oy
+    }));
+  }
+
+  update() {
+    // 베이스는 항상 돼지에 고정
+    this.pts[0].x = pig.cx + Tail.OFFSETS[0][0] * pig.r;
+    this.pts[0].y = pig.cy + Tail.OFFSETS[0][1] * pig.r;
+
+    for (let i = 1; i < this.pts.length; i++) {
+      if (this.dragging && i === this.pts.length - 1) continue;
+      const p = this.pts[i];
+      const tx = pig.cx + p.ox * pig.r;
+      const ty = pig.cy + p.oy * pig.r;
+      p.vx = (p.vx + (tx - p.x) * 0.2) * 0.7;
+      p.vy = (p.vy + (ty - p.y) * 0.2) * 0.7;
+      p.x += p.vx;
+      p.y += p.vy;
+    }
+  }
+
+  hitTest(mx, my) {
+    const tip = this.pts[this.pts.length - 1];
+    return Math.hypot(mx - tip.x, my - tip.y) < pig.r * 0.18;
+  }
+
+  startDrag() { this.dragging = true; }
+
+  moveDrag(mx, my) {
+    if (!this.dragging) return;
+    const tip = this.pts[this.pts.length - 1];
+    tip.x = mx; tip.y = my; tip.vx = 0; tip.vy = 0;
+    // 인접 포인트도 살짝 끌려오게
+    for (let s = 1; s <= 3; s++) {
+      const ni = this.pts.length - 1 - s;
+      if (ni <= 0) break;
+      const fac = Math.pow(0.5, s) * 0.18;
+      this.pts[ni].vx += (mx - this.pts[ni].x) * fac;
+      this.pts[ni].vy += (my - this.pts[ni].y) * fac;
+    }
+  }
+
+  endDrag() {
+    this.dragging = false;
+    const tip = this.pts[this.pts.length - 1];
+    const tx = pig.cx + tip.ox * pig.r;
+    const ty = pig.cy + tip.oy * pig.r;
+    // 튕기는 초기속도
+    tip.vx = (tx - tip.x) * 0.28;
+    tip.vy = (ty - tip.y) * 0.28;
+  }
+
+  draw(ctx) {
+    const pts = this.pts;
+    ctx.save();
+    ctx.strokeStyle = '#E896A8';
+    ctx.lineWidth = Math.max(2.5, pig.r * 0.045);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // 부드러운 곡선으로 연결
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+    ctx.stroke();
+
+    // 꼬리 끝 동그라미
+    const tip = pts[pts.length-1];
+    ctx.beginPath();
+    ctx.arc(tip.x, tip.y, pig.r * 0.07, 0, Math.PI*2);
+    ctx.fillStyle = '#E896A8';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 // ── Food ──────────────────────────────────────────────────
 class Food {
   constructor(type, rx, ry) {
@@ -716,6 +817,7 @@ function drawBg() {
 
 // ── Init ──────────────────────────────────────────────────
 const pig = new Pig(W / 2);
+const tail = new Tail();
 const foods = [
   new Food('cupcake', W * 0.18, H * 0.78),
   new Food('water',   W * 0.82, H * 0.78),
@@ -748,11 +850,15 @@ function checkPetting(x, y) {
   }
 }
 
+let draggedTail = false;
+
 function onDown(x, y) {
   // 악세서리 먼저
   for (const a of accessories) {
     if (a.hitTest(x, y)) { draggedAcc = a; a.startDrag(); return; }
   }
+  // 꼬리
+  if (tail.hitTest(x, y)) { draggedTail = true; tail.startDrag(); return; }
   // 음식
   for (const f of foods) {
     if (f.hitTest(x, y)) { draggedFood = f; f.startDrag(); return; }
@@ -764,6 +870,8 @@ function onMove(x, y) {
   checkPetting(x, y);
   if (draggedAcc) {
     draggedAcc.moveTo(x, y);
+  } else if (draggedTail) {
+    tail.moveDrag(x, y);
   } else if (draggedFood) {
     draggedFood.moveTo(x, y);
     const mouthX = pig.cx, mouthY = pig.cy + pig.r * 0.2;
@@ -776,7 +884,8 @@ function onMove(x, y) {
 }
 
 function onUp(x, y) {
-  if (draggedAcc)  { draggedAcc.endDrag(); draggedAcc = null; }
+  if (draggedAcc)   { draggedAcc.endDrag(); draggedAcc = null; }
+  else if (draggedTail) { tail.endDrag(); draggedTail = false; }
   else if (draggedFood) { draggedFood.endDrag(); draggedFood = null; }
   else pig.pointerUp(x, y);
 }
@@ -805,6 +914,7 @@ window.addEventListener('resize', () => {
   if (typeof accessories !== 'undefined') {
     accessories.forEach(a => a._syncPanel());
   }
+  if (typeof tail !== 'undefined') tail._init();
 });
 
 // ── Loop ──────────────────────────────────────────────────
@@ -816,6 +926,7 @@ window.addEventListener('resize', () => {
 
   foods.forEach(f => f.update());
   pig.update();
+  tail.update();
 
   // 패널 악세서리 (돼지 뒤)
   accessories.forEach(a => { if (!a.worn && a !== draggedAcc) a.draw(ctx); });
@@ -823,6 +934,8 @@ window.addEventListener('resize', () => {
   foods.forEach(f => { if (f !== draggedFood) f.draw(ctx); });
   // 돼지
   pig.draw(ctx);
+  // 꼬리 (돼지 위)
+  tail.draw(ctx);
   // 착용 악세서리 (돼지 위)
   accessories.forEach(a => { if (a.worn && a !== draggedAcc) a.draw(ctx); });
   // 드래그 중인 것들 (최상위)
