@@ -1009,7 +1009,7 @@ function drawSceneDecorations(scene,ox) {
     ctx.quadraticCurveTo(ox+W*0.86,gy-H*0.1,ox+W,gy);
     ctx.lineTo(ox+W,gy+H*0.04); ctx.lineTo(ox,gy+H*0.04); ctx.closePath(); ctx.fill();
     // pine tree silhouettes
-    ctx.fillStyle='rgba(22,8,2,0.88)';
+    ctx.fillStyle='rgba(14,52,18,0.92)';
     _sunsetTree(ox+W*0.07,gy,H*0.3);
     _sunsetTree(ox+W*0.13,gy,H*0.23);
     _sunsetTree(ox+W*0.88,gy,H*0.26);
@@ -1584,8 +1584,8 @@ window.addEventListener('resize',()=>{
       if (d.y>H*0.65) { d.y=-d.len; d.x=Math.random()*W; }
     }
   }
-  // Rainy scene: keep rain going
-  if (SCENES[sceneIdx].id==='rainy') {
+  // Rainy scene: keep rain going (only while still on rainy, not during swipe-away)
+  if (SCENES[sceneIdx].id==='rainy' && sceneOffsetTarget===0) {
     if (rainTimer<=0) initRain();
     rainTimer=Math.max(rainTimer,60);
   }
