@@ -155,35 +155,35 @@ const SCENES = [
     sky:['#5C1E58','#C43650','#EF6428','#FFB040','#FFE068'], ground:['#B8724A','#7A3C18'], groundY:0.62,
     shadowColor:'rgba(90,30,0,0.28)',
     cloudFill:'rgba(255,155,100,0.78)', cloudShadow:'rgba(120,35,75,0.38)',
-    items: DEFAULT_ITEMS, // TODO: define sunset-specific items
+    items: [{type:'camera',rx:0.18,ry:0.78},{type:'bulgogi',rx:0.5,ry:0.82},{type:'soju',rx:0.82,ry:0.78}],
   },
   {
     id:'night', label:'밤',
     sky:['#0D1B3E','#152850'], ground:['#1A3A1A','#0D2010'], groundY:0.6,
     shadowColor:'rgba(0,20,0,0.35)',
     cloudFill:null,
-    items: DEFAULT_ITEMS, // TODO: define night-specific items
+    items: [{type:'cocoa',rx:0.18,ry:0.78},{type:'cookie',rx:0.5,ry:0.84},{type:'lollipop',rx:0.82,ry:0.78}],
   },
   {
     id:'rainy', label:'비오는 날',
     sky:['#6A8A9A','#8AAABB'], ground:['#527830','#325018'], groundY:0.6,
     shadowColor:'rgba(20,50,0,0.22)',
     cloudFill:'rgba(160,175,185,0.95)', cloudShadow:'rgba(60,90,120,0.25)',
-    items: DEFAULT_ITEMS, // TODO: define rainy-specific items
+    items: [{type:'hotmilk',rx:0.18,ry:0.78},{type:'teacup',rx:0.5,ry:0.84},{type:'clover',rx:0.82,ry:0.78}],
   },
   {
     id:'cozy', label:'아늑한 방',
     sky:['#F5E0C8','#EDDCC0'], ground:['#C8906A','#A07040'], groundY:0.6,
     shadowColor:'rgba(80,40,0,0.2)',
     cloudFill:null,
-    items: DEFAULT_ITEMS, // TODO: define cozy-specific items
+    items: [{type:'cocoa',rx:0.18,ry:0.78},{type:'macaron',rx:0.5,ry:0.84},{type:'teacup',rx:0.82,ry:0.78}],
   },
   {
     id:'study', label:'공부 책상',
     sky:['#EDE4D8','#D8CDB8'], ground:['#C8A870','#9A7840'], groundY:0.6,
     shadowColor:'rgba(70,40,0,0.2)',
     cloudFill:null,
-    items: DEFAULT_ITEMS, // TODO: define study-specific items
+    items: [{type:'coffee',rx:0.18,ry:0.78},{type:'cookie',rx:0.5,ry:0.84},{type:'macaron',rx:0.82,ry:0.78}],
   },
 ];
 
@@ -318,7 +318,7 @@ class Pig {
   }
 
   eat(type) {
-    if (type==='cocktail') this.drunkTimer=60;
+    if (type==='cocktail'||type==='soju') this.drunkTimer=60;
     if (type==='cupcake') {
       const now=Date.now();
       this.cupcakeEatTimes=this.cupcakeEatTimes.filter(t=>now-t<5000);
@@ -585,6 +585,10 @@ class Food {
       cocoa:   ()=>this._drawCocoa(ctx,x,y,s),
       lollipop:()=>this._drawLollipop(ctx,x,y,s),
       macaron: ()=>this._drawMacaron(ctx,x,y,s),
+      camera:  ()=>this._drawCamera(ctx,x,y,s),
+      bulgogi: ()=>this._drawBulgogi(ctx,x,y,s),
+      soju:    ()=>this._drawSoju(ctx,x,y,s),
+      coffee:  ()=>this._drawCoffee(ctx,x,y,s),
     };
     (m[this.type]||m.flower)();
   }
@@ -762,6 +766,120 @@ class Food {
     ctx.fillStyle='#FFAAD0'; ctx.fill(); ctx.strokeStyle='#FF88BB'; ctx.lineWidth=1.5; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(x-s*0.08,y-s*0.15,s*0.1,s*0.055,0,0,Math.PI*2);
     ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fill();
+  }
+
+  _drawCamera(ctx,x,y,s) {
+    // body
+    ctx.fillStyle='#2A2A2A'; ctx.strokeStyle='#111'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(x-s*0.34,y-s*0.16,s*0.68,s*0.46,s*0.04); ctx.fill(); ctx.stroke();
+    // viewfinder bump
+    ctx.beginPath(); ctx.roundRect(x-s*0.14,y-s*0.26,s*0.2,s*0.12,3); ctx.fill(); ctx.stroke();
+    // lens outer ring
+    ctx.beginPath(); ctx.arc(x-s*0.06,y+s*0.06,s*0.19,0,Math.PI*2);
+    ctx.fillStyle='#1A1A1A'; ctx.fill(); ctx.strokeStyle='#555'; ctx.lineWidth=3; ctx.stroke();
+    // lens glass
+    ctx.beginPath(); ctx.arc(x-s*0.06,y+s*0.06,s*0.13,0,Math.PI*2);
+    ctx.fillStyle='#223399'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x-s*0.06,y+s*0.06,s*0.07,0,Math.PI*2);
+    ctx.fillStyle='#1122BB'; ctx.fill();
+    // lens highlight
+    ctx.beginPath(); ctx.arc(x-s*0.12,y+s*0.01,s*0.038,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.fill();
+    // shutter button
+    ctx.beginPath(); ctx.arc(x+s*0.22,y-s*0.19,s*0.042,0,Math.PI*2);
+    ctx.fillStyle='#CC3333'; ctx.fill();
+    // flash
+    ctx.fillStyle='#FFFFCC';
+    ctx.beginPath(); ctx.roundRect(x+s*0.08,y-s*0.2,s*0.12,s*0.07,3); ctx.fill();
+  }
+
+  _drawBulgogi(ctx,x,y,s) {
+    // bowl base
+    ctx.fillStyle='#C89A60'; ctx.strokeStyle='#A87A40'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.36,y+s*0.06);
+    ctx.quadraticCurveTo(x-s*0.4,y+s*0.44,x,y+s*0.5);
+    ctx.quadraticCurveTo(x+s*0.4,y+s*0.44,x+s*0.36,y+s*0.06);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // bowl rim
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.06,s*0.36,s*0.09,0,0,Math.PI*2);
+    ctx.fillStyle='#DEB878'; ctx.fill(); ctx.strokeStyle='#A87A40'; ctx.lineWidth=1.5; ctx.stroke();
+    // meat pieces
+    ctx.strokeStyle='#6A2010'; ctx.lineWidth=1;
+    for (const [dx,dy,rot] of [[-s*0.12,-s*0.06,0.3],[s*0.1,-s*0.1,-0.4],[s*0.22,-s*0.04,0.6],[-s*0.24,-s*0.02,-0.2],[s*0.02,s*0.0,0.2],[-s*0.04,-s*0.13,0.5]]) {
+      ctx.save(); ctx.translate(x+dx,y+dy); ctx.rotate(rot);
+      ctx.fillStyle='#983010';
+      ctx.beginPath(); ctx.ellipse(0,0,s*0.1,s*0.06,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    // green onion
+    ctx.strokeStyle='#4A8A20'; ctx.lineWidth=2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x-s*0.06,y-s*0.1); ctx.lineTo(x+s*0.12,y+s*0.02); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+s*0.1,y-s*0.07); ctx.lineTo(x-s*0.06,y+s*0.03); ctx.stroke();
+  }
+
+  _drawSoju(ctx,x,y,s) {
+    const bx=x, by=y-s*0.06;
+    // bottle body
+    ctx.fillStyle='#58A845'; ctx.strokeStyle='#38782A'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx-s*0.12,by+s*0.5);
+    ctx.lineTo(bx-s*0.12,by+s*0.1);
+    ctx.quadraticCurveTo(bx-s*0.12,by-s*0.1,bx-s*0.07,by-s*0.2);
+    ctx.lineTo(bx-s*0.055,by-s*0.42);
+    ctx.lineTo(bx+s*0.055,by-s*0.42);
+    ctx.lineTo(bx+s*0.07,by-s*0.2);
+    ctx.quadraticCurveTo(bx+s*0.12,by-s*0.1,bx+s*0.12,by+s*0.1);
+    ctx.lineTo(bx+s*0.12,by+s*0.5);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // cap
+    ctx.fillStyle='#E0E0E0'; ctx.strokeStyle='#AAAAAA'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(bx-s*0.06,by-s*0.52,s*0.12,s*0.12,3); ctx.fill(); ctx.stroke();
+    // white label
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.roundRect(bx-s*0.09,by+s*0.04,s*0.18,s*0.28,3); ctx.fill();
+    // label accent bar
+    ctx.fillStyle='#2A7A2A';
+    ctx.beginPath(); ctx.roundRect(bx-s*0.07,by+s*0.07,s*0.14,s*0.08,2); ctx.fill();
+    // bottle shine
+    ctx.fillStyle='rgba(255,255,255,0.22)';
+    ctx.beginPath(); ctx.roundRect(bx-s*0.09,by+s*0.1,s*0.04,s*0.3,2); ctx.fill();
+  }
+
+  _drawCoffee(ctx,x,y,s) {
+    // cup body (tapered)
+    ctx.fillStyle='#F0E4D0'; ctx.strokeStyle='#D4C0A0'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.19,y-s*0.04);
+    ctx.lineTo(x-s*0.23,y+s*0.44);
+    ctx.lineTo(x+s*0.23,y+s*0.44);
+    ctx.lineTo(x+s*0.19,y-s*0.04);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // sleeve
+    ctx.fillStyle='#7A4A28'; ctx.strokeStyle='#5A3010'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.21,y+s*0.16);
+    ctx.lineTo(x-s*0.225,y+s*0.32);
+    ctx.lineTo(x+s*0.225,y+s*0.32);
+    ctx.lineTo(x+s*0.21,y+s*0.16);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // dome lid
+    ctx.fillStyle='#DDD0B8'; ctx.strokeStyle='#BEA888'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.21,y-s*0.04);
+    ctx.bezierCurveTo(x-s*0.21,y-s*0.18,x+s*0.21,y-s*0.18,x+s*0.21,y-s*0.04);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // sip hole
+    ctx.fillStyle='#A08060';
+    ctx.beginPath(); ctx.roundRect(x-s*0.07,y-s*0.14,s*0.14,s*0.04,2); ctx.fill();
+    // steam
+    ctx.strokeStyle='rgba(160,130,90,0.35)'; ctx.lineWidth=1.8; ctx.lineCap='round';
+    for (const [dx,flip] of [[-s*0.07,1],[s*0.06,-1]]) {
+      ctx.beginPath();
+      ctx.moveTo(x+dx,y-s*0.2);
+      ctx.bezierCurveTo(x+dx+flip*s*0.06,y-s*0.33,x+dx-flip*s*0.06,y-s*0.43,x+dx,y-s*0.54);
+      ctx.stroke();
+    }
   }
 }
 
@@ -1649,6 +1767,22 @@ const MSGS = {
     '생각은 나중에 하꼬잉','오늘 일은 오늘로 끝이꼬잉','그냥 마시꼬잉',
     '원래 이런 거 있꼬잉','스트레스는 희석이 답꼬잉','감정은 음료로 처리 가능꼬잉','한 잔이면 충분꼬잉',
     '어쩌겠꼬잉','뭐 다 그렇꼬잉','그래봤자 내일 또 출근이꼬잉','취하면 다 잊혀지꼬잉',
+  ],
+  camera: [
+    '찍어봤자 안 올리꼬잉','추억은 폰 안에 쌓이꼬잉','셔터 누르면 기억이 되꼬잉',
+    '오늘 노을 예쁘꼬잉','나중에 보면 웃기꼬잉','찰칵꼬잉',
+  ],
+  bulgogi: [
+    '배부르면 다 해결꼬잉','불고기가 최고꼬잉','이건 진짜 맛있꼬잉',
+    '먹고 힘내꼬잉','밥심으로 사는 거꼬잉','고기 앞에 장사 없꼬잉',
+  ],
+  soju: [
+    '오늘 하루 수고했꼬잉','소주 한 잔에 다 털꼬잉','취해도 괜찮꼬잉',
+    '이게 다 퇴근의 맛이꼬잉','한 잔이면 충분꼬잉','다 잊고 마시꼬잉',
+  ],
+  coffee: [
+    '카페인이 곧 의지꼬잉','한 모금에 각성꼬잉','졸려도 해야 하꼬잉',
+    '커피 없인 못 살꼬잉','오늘도 버티꼬잉','향부터 힐링꼬잉',
   ],
 };
 const _bubbleEl=document.getElementById('bubble');
