@@ -1572,10 +1572,10 @@ function drawSceneIndicator() {
 let draggedFood=null, draggedAcc=null, lastPetX=null, draggedEar=-1;
 
 // ── Scene helpers ─────────────────────────────────────────
-function rebuildFoods() {
+function rebuildFoods(idx) {
   draggedFood=null;
   foods.length=0;
-  SCENES[sceneIdx].items.forEach(item=>foods.push(new Food(item.type,W*item.rx,H*item.ry)));
+  SCENES[idx!==undefined?idx:sceneIdx].items.forEach(item=>foods.push(new Food(item.type,W*item.rx,H*item.ry)));
 }
 
 function handleSceneInteraction(x,y) {
@@ -1680,6 +1680,8 @@ function onUp(x,y) {
     // Commit scene switch if past threshold, else spring back
     if (Math.abs(delta)>W*0.22) {
       onSceneExit(sceneIdx);
+      const nextIdx=delta<0?(sceneIdx+1)%SCENES.length:(sceneIdx-1+SCENES.length)%SCENES.length;
+      rebuildFoods(nextIdx);
       sceneOffsetPx=delta;
       sceneOffsetTarget=delta<0?-W:W;
     } else {
