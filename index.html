@@ -179,11 +179,11 @@ const SCENES = [
     items: DEFAULT_ITEMS, // TODO: define cozy-specific items
   },
   {
-    id:'candy', label:'캔디랜드',
-    sky:['#FFB3DE','#FFDDF4'], ground:['#FF99CC','#FF55AA'], groundY:0.6,
-    shadowColor:'rgba(180,0,80,0.18)',
-    cloudFill:'rgba(255,210,235,0.9)', cloudShadow:'rgba(255,100,180,0.2)',
-    items: DEFAULT_ITEMS, // TODO: define candy-specific items
+    id:'study', label:'공부 책상',
+    sky:['#EDE4D8','#D8CDB8'], ground:['#C8A870','#9A7840'], groundY:0.6,
+    shadowColor:'rgba(70,40,0,0.2)',
+    cloudFill:null,
+    items: DEFAULT_ITEMS, // TODO: define study-specific items
   },
 ];
 
@@ -1104,12 +1104,142 @@ function drawSceneDecorations(scene,ox) {
       ctx.beginPath(); ctx.roundRect(shx+shw*0.72,shy-H*0.06,H*0.022,H*0.06,3); ctx.fill();
     }
   }
-  else if (scene.id==='candy') {
-    _candyCane(ox+W*0.06,H*0.42);
-    _candyCane(ox+W*0.94,H*0.42);
-    ctx.fillStyle='rgba(255,200,50,0.7)';
-    for (const [rx,ry] of [[0.18,0.65],[0.4,0.62],[0.72,0.66],[0.88,0.63]])
-      _starShape(ox+rx*W,ry*H,H*0.022);
+  else if (scene.id==='study') {
+    // desk surface edge highlight + front panel
+    ctx.fillStyle='rgba(220,175,90,0.3)';
+    ctx.fillRect(ox,gy-H*0.01,W,H*0.01);
+    ctx.fillStyle='rgba(55,30,5,0.22)';
+    ctx.fillRect(ox,gy,W,H*0.007);
+    // wall frame / poster
+    { const px=ox+W*0.36, py=H*0.07, pw=W*0.13, ph=H*0.19;
+      ctx.fillStyle='#F8F2E8'; ctx.strokeStyle='#C8AE80'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.roundRect(px,py,pw,ph,4); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle='#B09060'; ctx.lineWidth=1.5;
+      // simple mountain sketch inside poster
+      ctx.fillStyle='#E0D5C0';
+      ctx.beginPath(); ctx.moveTo(px+pw*0.1,py+ph*0.85);
+      ctx.lineTo(px+pw*0.38,py+ph*0.38); ctx.lineTo(px+pw*0.55,py+ph*0.55);
+      ctx.lineTo(px+pw*0.72,py+ph*0.28); ctx.lineTo(px+pw*0.9,py+ph*0.85);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#C8D4E0';
+      ctx.beginPath(); ctx.arc(px+pw*0.22,py+ph*0.22,pw*0.14,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+    // sticky notes on wall
+    for (const [dx,col,rot] of [
+      [0,'#FFEE88',0.04],[0.08,'#FFB5C8',-0.03],[0.155,'#B8E8A0',0.02]
+    ]) {
+      ctx.save(); ctx.globalAlpha=0.88;
+      ctx.translate(ox+W*0.55+dx*W, H*0.12);
+      ctx.rotate(rot);
+      ctx.fillStyle=col; ctx.shadowColor='rgba(0,0,0,0.1)'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.rect(0,0,W*0.055,H*0.058); ctx.fill();
+      ctx.restore();
+    }
+    // open laptop (left side)
+    { const lx=ox+W*0.16, ly=gy, lw=W*0.24;
+      // base / keyboard
+      ctx.fillStyle='#CACAC5'; ctx.strokeStyle='#A5A5A0'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.roundRect(lx,ly-H*0.022,lw,H*0.022,[3,3,7,7]); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#B0B0AA';
+      ctx.beginPath(); ctx.roundRect(lx+lw*0.33,ly-H*0.016,lw*0.26,H*0.011,3); ctx.fill();
+      // screen
+      ctx.fillStyle='#222230'; ctx.strokeStyle='#18181E'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.022-H*0.145,lw*0.92,H*0.145,[8,8,2,2]);
+      ctx.fill(); ctx.stroke();
+      // screen display gradient
+      const sg=ctx.createLinearGradient(lx+lw*0.06,ly-H*0.155,lx+lw*0.94,ly-H*0.032);
+      sg.addColorStop(0,'#5898B8'); sg.addColorStop(1,'#306880');
+      ctx.fillStyle=sg;
+      ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.fill();
+      // screen content lines (code suggestion)
+      ctx.fillStyle='rgba(255,255,255,0.2)';
+      for (const [i,w] of [[0,0.52],[1,0.68],[2,0.38],[3,0.58]]) {
+        ctx.beginPath(); ctx.roundRect(lx+lw*0.1,ly-H*0.022-H*0.105+i*H*0.024,lw*w,H*0.011,2); ctx.fill();
+      }
+      // laptop hinge shadow
+      ctx.fillStyle='rgba(0,0,0,0.12)';
+      ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.023,lw*0.92,H*0.004,1); ctx.fill();
+    }
+    // coffee mug
+    { const mx=ox+W*0.585, my=gy, mw=W*0.052, mh=H*0.072;
+      // body
+      ctx.fillStyle='#E8D8C8'; ctx.strokeStyle='#C8A888'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.roundRect(mx,my-mh,mw,mh,[7,7,4,4]); ctx.fill(); ctx.stroke();
+      // stripe decoration
+      ctx.fillStyle='rgba(150,90,70,0.4)';
+      ctx.beginPath(); ctx.roundRect(mx+mw*0.12,my-mh*0.62,mw*0.76,mh*0.28,2); ctx.fill();
+      // handle
+      ctx.strokeStyle='#C8A888'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(mx+mw+mw*0.08,my-mh*0.44,mh*0.21,-0.65,0.65); ctx.stroke();
+      // rim / top
+      ctx.fillStyle='rgba(220,185,155,0.6)';
+      ctx.beginPath(); ctx.ellipse(mx+mw*0.5,my-mh,mw*0.5,mh*0.07,0,0,Math.PI*2); ctx.fill();
+      // steam
+      ctx.strokeStyle='rgba(210,190,170,0.5)'; ctx.lineWidth=1.8; ctx.lineCap='round';
+      for (const [dx,flip] of [[-mw*0.08,1],[mw*0.1,-1]]) {
+        ctx.beginPath();
+        ctx.moveTo(mx+mw*0.5+dx, my-mh-H*0.004);
+        ctx.bezierCurveTo(mx+mw*0.5+dx+flip*mw*0.12,my-mh-H*0.022,
+                          mx+mw*0.5+dx-flip*mw*0.12,my-mh-H*0.044,
+                          mx+mw*0.5+dx,my-mh-H*0.062); ctx.stroke();
+      }
+    }
+    // desk lamp (right side)
+    { const lx=ox+W*0.85, ly=gy, s=H*0.19;
+      // warm glow pool on desk
+      const glow=ctx.createRadialGradient(lx-s*0.22,ly-H*0.01,0,lx-s*0.22,ly-H*0.01,s*0.38);
+      glow.addColorStop(0,'rgba(255,210,100,0.2)'); glow.addColorStop(1,'rgba(255,190,60,0)');
+      ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(lx-s*0.22,ly-H*0.01,s*0.38,0,Math.PI*2); ctx.fill();
+      // base disc
+      ctx.fillStyle='#707480'; ctx.strokeStyle='#545660'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(lx,ly-s*0.03,s*0.08,s*0.025,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      // pole
+      ctx.strokeStyle='#808490'; ctx.lineWidth=s*0.042; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(lx,ly-s*0.05); ctx.lineTo(lx-s*0.05,ly-s*0.5); ctx.stroke();
+      // arm
+      ctx.beginPath(); ctx.moveTo(lx-s*0.05,ly-s*0.5); ctx.lineTo(lx-s*0.3,ly-s*0.58); ctx.stroke();
+      // shade (trapezoid)
+      ctx.fillStyle='#D4A828'; ctx.strokeStyle='#B48818'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(lx-s*0.3-s*0.07,ly-s*0.55);
+      ctx.lineTo(lx-s*0.3+s*0.07,ly-s*0.55);
+      ctx.lineTo(lx-s*0.3+s*0.15,ly-s*0.42);
+      ctx.lineTo(lx-s*0.3-s*0.15,ly-s*0.42);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // shade inner highlight
+      ctx.fillStyle='rgba(255,235,140,0.38)';
+      ctx.beginPath();
+      ctx.moveTo(lx-s*0.3-s*0.045,ly-s*0.54);
+      ctx.lineTo(lx-s*0.3+s*0.045,ly-s*0.54);
+      ctx.lineTo(lx-s*0.3+s*0.09, ly-s*0.46);
+      ctx.lineTo(lx-s*0.3-s*0.09, ly-s*0.46);
+      ctx.closePath(); ctx.fill();
+      // bulb
+      ctx.fillStyle='#FFFACC';
+      ctx.beginPath(); ctx.arc(lx-s*0.3,ly-s*0.42,s*0.03,0,Math.PI*2); ctx.fill();
+    }
+    // mini plant pot (far right corner)
+    { const px=ox+W*0.93, py=gy, pr=W*0.028;
+      // pot
+      ctx.fillStyle='#B07858'; ctx.strokeStyle='#8A5838'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(px-pr*0.8,py); ctx.lineTo(px+pr*0.8,py);
+      ctx.lineTo(px+pr*0.6,py-H*0.042); ctx.lineTo(px-pr*0.6,py-H*0.042);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // soil
+      ctx.fillStyle='#5A3820';
+      ctx.beginPath(); ctx.ellipse(px,py-H*0.042,pr*0.6,H*0.01,0,0,Math.PI*2); ctx.fill();
+      // leaves (simple succulent)
+      for (const [a,r,col] of [
+        [-0.5,H*0.04,'#6AA858'],[-0.1,H*0.048,'#82C068'],[0.35,H*0.042,'#6AA858'],
+        [-0.9,H*0.036,'#82C068'],[0.7,H*0.038,'#6AA858']
+      ]) {
+        ctx.fillStyle=col;
+        ctx.beginPath();
+        ctx.ellipse(px+Math.cos(a)*pr*0.3,py-H*0.042-r*0.5+H*0.004,pr*0.28,r*0.55,a,0,Math.PI*2);
+        ctx.fill();
+      }
+    }
   }
 }
 
