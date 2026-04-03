@@ -1077,36 +1077,125 @@ class Food {
   }
 
   _drawRamen(ctx,x,y,s) {
-    // bowl outer
-    ctx.fillStyle='#F0E0C0'; ctx.strokeStyle='#C8A870'; ctx.lineWidth=2;
+    const rimY=y+s*0.06, rimRx=s*0.35, rimRy=s*0.1, btm=y+s*0.52;
+
+    // ── bowl body (cream, side gradient) ──
+    const bG=ctx.createLinearGradient(x-rimRx,0,x+rimRx,0);
+    bG.addColorStop(0,'#C0AE88'); bG.addColorStop(0.45,'#F5EBD5'); bG.addColorStop(1,'#B8A07E');
     ctx.beginPath();
-    ctx.moveTo(x-s*0.36,y+s*0.08);
-    ctx.quadraticCurveTo(x-s*0.38,y+s*0.46,x,y+s*0.5);
-    ctx.quadraticCurveTo(x+s*0.38,y+s*0.46,x+s*0.36,y+s*0.08);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    // broth
-    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.36,s*0.09,0,0,Math.PI*2);
-    ctx.fillStyle='#C85020'; ctx.fill();
-    // noodle swirls
-    ctx.strokeStyle='#F8E8B0'; ctx.lineWidth=2; ctx.lineCap='round';
-    for (const [cx2,cy2,r,sa,ea] of [
-      [x-s*0.1,y+s*0.16,s*0.12,0.2,Math.PI*1.8],
-      [x+s*0.08,y+s*0.2,s*0.1,-0.3,Math.PI*1.6],
-      [x-s*0.04,y+s*0.3,s*0.14,0.4,Math.PI*1.9],
-    ]) {
-      ctx.beginPath(); ctx.arc(cx2,cy2,r,sa,ea); ctx.stroke();
+    ctx.moveTo(x-rimRx,rimY);
+    ctx.bezierCurveTo(x-rimRx*1.1,rimY+s*0.22, x-rimRx*0.42,btm, x,btm);
+    ctx.bezierCurveTo(x+rimRx*0.42,btm, x+rimRx*1.1,rimY+s*0.22, x+rimRx,rimY);
+    ctx.fillStyle=bG; ctx.fill();
+    ctx.strokeStyle='#9A8860'; ctx.lineWidth=1.5; ctx.stroke();
+
+    // ── broth + noodles clipped inside rim ──
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(x,rimY,rimRx*0.94,rimRy*1.15,0,0,Math.PI*2); ctx.clip();
+
+    // broth fill (spicy orange-red)
+    const brG=ctx.createRadialGradient(x-rimRx*0.2,rimY-rimRy*0.3,0,x,rimY,rimRx);
+    brG.addColorStop(0,'#D05822'); brG.addColorStop(1,'#A03010');
+    ctx.fillStyle=brG; ctx.fillRect(x-rimRx,rimY-rimRy*1.3,rimRx*2,rimRy*2.6);
+
+    // wavy noodles (3 rows, quadratic waves, tight inside bowl)
+    const noodleRows=[
+      {ny:rimY-rimRy*0.08, amp:s*0.038, col:'#E8C838', hi:'#F8E060'},
+      {ny:rimY+rimRy*0.25, amp:s*0.032, col:'#D8B828', hi:'#EDD050'},
+      {ny:rimY-rimRy*0.42, amp:s*0.028, col:'#EAC030', hi:'#F8D858'},
+    ];
+    const nw=rimRx*1.75;
+    for (const {ny,amp,col,hi} of noodleRows) {
+      // noodle shadow
+      ctx.strokeStyle='rgba(100,70,0,0.25)'; ctx.lineWidth=2.6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(x-nw/2,ny+1.5);
+      for(let i=0;i<7;i++){
+        const sign=i%2===0?1:-1;
+        ctx.quadraticCurveTo(x-nw/2+nw*(i+0.5)/7, ny+sign*amp+1.5, x-nw/2+nw*(i+1)/7, ny+1.5);
+      }
+      ctx.stroke();
+      // noodle base
+      ctx.strokeStyle=col; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.moveTo(x-nw/2,ny);
+      for(let i=0;i<7;i++){
+        const sign=i%2===0?1:-1;
+        ctx.quadraticCurveTo(x-nw/2+nw*(i+0.5)/7, ny+sign*amp, x-nw/2+nw*(i+1)/7, ny);
+      }
+      ctx.stroke();
+      // noodle highlight
+      ctx.strokeStyle=hi; ctx.lineWidth=0.9;
+      ctx.beginPath(); ctx.moveTo(x-nw/2,ny-0.8);
+      for(let i=0;i<7;i++){
+        const sign=i%2===0?1:-1;
+        ctx.quadraticCurveTo(x-nw/2+nw*(i+0.5)/7, ny+sign*amp*0.5-0.8, x-nw/2+nw*(i+1)/7, ny-0.8);
+      }
+      ctx.stroke();
     }
-    // egg half
-    ctx.fillStyle='#FFF8E0'; ctx.strokeStyle='#E0D090'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.ellipse(x+s*0.18,y+s*0.18,s*0.1,s*0.08,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#F8B820';
-    ctx.beginPath(); ctx.arc(x+s*0.18,y+s*0.18,s*0.05,0,Math.PI*2); ctx.fill();
-    // steam
-    ctx.strokeStyle='rgba(220,160,80,0.38)'; ctx.lineWidth=1.8; ctx.lineCap='round';
-    for (const [dx,flip] of [[-s*0.1,1],[s*0.08,-1]]) {
+
+    // egg half (inside bowl, upper-right area)
+    ctx.fillStyle='#FFF6DC'; ctx.strokeStyle='#D8C880'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(x+s*0.2,rimY-rimRy*0.05,s*0.085,s*0.07,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#F0AA18';
+    ctx.beginPath(); ctx.arc(x+s*0.2,rimY-rimRy*0.05,s*0.042,0,Math.PI*2); ctx.fill();
+
+    ctx.restore();
+
+    // ── bowl rim (drawn over to cleanly cap edges) ──
+    const rG=ctx.createLinearGradient(x,rimY-rimRy,x,rimY+rimRy);
+    rG.addColorStop(0,'#F2E8C8'); rG.addColorStop(1,'#C8B07A');
+    ctx.beginPath(); ctx.ellipse(x,rimY,rimRx,rimRy,0,0,Math.PI*2);
+    ctx.fillStyle=rG; ctx.fill();
+    ctx.strokeStyle='#A08850'; ctx.lineWidth=1.5; ctx.stroke();
+    // rim inner shadow ring
+    ctx.beginPath(); ctx.ellipse(x,rimY,rimRx*0.87,rimRy*0.62,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(60,35,5,0.18)'; ctx.lineWidth=1.8; ctx.stroke();
+
+    // ── chopsticks (diagonal upper-right, tips meeting over noodles) ──
+    // tip coords (where chopsticks touch noodles, inside bowl)
+    const t1x=x-s*0.04, t1y=rimY-rimRy*0.15;
+    const t2x=x+s*0.04, t2y=rimY-rimRy*0.15;
+    // grip coords (outside, upper right)
+    const g1x=x+s*0.38, g1y=y-s*0.42;
+    const g2x=x+s*0.48, g2y=y-s*0.34;
+    ctx.lineCap='round';
+    // shadow pass
+    for(const [tx,ty,gx,gy] of [[t1x,t1y,g1x,g1y],[t2x,t2y,g2x,g2y]]){
+      ctx.beginPath(); ctx.moveTo(tx+1.5,ty+1.5); ctx.lineTo(gx+1.5,gy+1.5);
+      ctx.strokeStyle='rgba(0,0,0,0.14)'; ctx.lineWidth=4; ctx.stroke();
+    }
+    // chop 1
+    ctx.beginPath(); ctx.moveTo(t1x,t1y); ctx.lineTo(g1x,g1y);
+    ctx.strokeStyle='#D4A840'; ctx.lineWidth=3.2; ctx.stroke();
+    const m1x=(t1x+g1x)/2,m1y=(t1y+g1y)/2;
+    ctx.beginPath(); ctx.moveTo(t1x,t1y); ctx.lineTo(m1x,m1y);
+    ctx.strokeStyle='#9A7020'; ctx.lineWidth=2; ctx.stroke();
+    // chop 2
+    ctx.beginPath(); ctx.moveTo(t2x,t2y); ctx.lineTo(g2x,g2y);
+    ctx.strokeStyle='#D4A840'; ctx.lineWidth=3.2; ctx.stroke();
+    const m2x=(t2x+g2x)/2,m2y=(t2y+g2y)/2;
+    ctx.beginPath(); ctx.moveTo(t2x,t2y); ctx.lineTo(m2x,m2y);
+    ctx.strokeStyle='#9A7020'; ctx.lineWidth=2; ctx.stroke();
+
+    // ── hanging noodle strands from chopstick tips ──
+    const tipX=(t1x+t2x)/2, tipY=(t1y+t2y)/2;
+    for(const [ox,bow,col] of [
+      [-s*0.06, s*0.05,'#E0C030'],
+      [-s*0.01,-s*0.03,'#EED040'],
+      [ s*0.05, s*0.04,'#D4B020'],
+    ]){
       ctx.beginPath();
-      ctx.moveTo(x+dx,y-s*0.04);
-      ctx.bezierCurveTo(x+dx+flip*s*0.07,y-s*0.18,x+dx-flip*s*0.07,y-s*0.3,x+dx,y-s*0.42);
+      ctx.moveTo(tipX+ox, tipY);
+      ctx.quadraticCurveTo(tipX+ox+bow, tipY+s*0.07, tipX+ox+bow*0.7, tipY+s*0.14);
+      ctx.quadraticCurveTo(tipX+ox-bow*0.3, tipY+s*0.2, tipX+ox+bow*0.3, tipY+s*0.24);
+      ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.stroke();
+    }
+
+    // ── steam ──
+    ctx.strokeStyle='rgba(215,140,70,0.3)'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    for(const [dx,flip] of [[-s*0.12,1],[s*0.06,-1]]){
+      ctx.beginPath();
+      ctx.moveTo(x+dx, rimY-rimRy-s*0.02);
+      ctx.bezierCurveTo(x+dx+flip*s*0.07,rimY-rimRy-s*0.14, x+dx-flip*s*0.07,rimY-rimRy-s*0.24, x+dx,rimY-rimRy-s*0.36);
       ctx.stroke();
     }
   }
