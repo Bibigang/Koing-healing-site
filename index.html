@@ -1405,7 +1405,7 @@ function handleSceneInteraction(x,y) {
   } else if (sid==='rainy') {
     if (Math.hypot(x-LIGHTNING.rx*W,y-LIGHTNING.ry*H)<H*0.07) { lightningFlash=18; return true; }
   } else if (sid==='night') {
-    if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.06)) { starEyeTimer=90; return true; }
+    if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
   }
   return false;
 }
