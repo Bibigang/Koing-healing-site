@@ -951,46 +951,87 @@ class Food {
   }
 
   _drawChicken(ctx,x,y,s) {
-    // bone
-    ctx.strokeStyle='#EEE0C0'; ctx.lineWidth=s*0.07; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x+s*0.06,y+s*0.52); ctx.lineTo(x+s*0.1,y+s*0.12); ctx.stroke();
-    ctx.fillStyle='#EEE0C0';
-    ctx.beginPath(); ctx.arc(x+s*0.06,y+s*0.52,s*0.07,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x+s*0.1,y+s*0.12,s*0.05,0,Math.PI*2); ctx.fill();
-    // meat body (crispy golden)
-    ctx.fillStyle='#D4842A'; ctx.strokeStyle='#B06018'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.ellipse(x-s*0.04,y-s*0.08,s*0.32,s*0.38,0.2,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // crispy coating bumps
-    ctx.fillStyle='#E8A040';
-    for (const [dx,dy,r] of [[-s*0.12,-s*0.22,s*0.1],[s*0.1,-s*0.28,s*0.09],[-s*0.22,-s*0.04,s*0.08],[s*0.14,-s*0.08,s*0.09],[s*0.0,s*0.1,s*0.08],[-s*0.08,s*0.16,s*0.07]]) {
-      ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
-    }
-    // shine
-    ctx.fillStyle='rgba(255,230,160,0.32)';
-    ctx.beginPath(); ctx.ellipse(x-s*0.12,y-s*0.22,s*0.1,s*0.06,-0.5,0,Math.PI*2); ctx.fill();
+    // bone stick
+    ctx.strokeStyle='#E8D8A8'; ctx.lineWidth=s*0.065; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x+s*0.08,y+s*0.54); ctx.lineTo(x+s*0.1,y+s*0.08); ctx.stroke();
+    // bone knob bottom
+    ctx.fillStyle='#EEE0B8'; ctx.strokeStyle='#C8B880'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x+s*0.08,y+s*0.54,s*0.09,s*0.055,0.2,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // bone knob top (smaller, peeking from meat)
+    ctx.beginPath(); ctx.ellipse(x+s*0.1,y+s*0.08,s*0.065,s*0.04,0.1,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // meat body shadow layer
+    ctx.fillStyle='#8C3808';
+    ctx.beginPath(); ctx.ellipse(x-s*0.04,y-s*0.06,s*0.33,s*0.4,0.18,0,Math.PI*2); ctx.fill();
+    // main crust (dark golden brown)
+    ctx.fillStyle='#C46014'; ctx.strokeStyle='#8C3808'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(x-s*0.06,y-s*0.08,s*0.31,s*0.38,0.18,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // mid crust layer (golden)
+    ctx.fillStyle='#DC8020';
+    ctx.beginPath(); ctx.ellipse(x-s*0.07,y-s*0.1,s*0.28,s*0.34,0.18,0,Math.PI*2); ctx.fill();
+    // crispy bumps — dark shadow bumps first
+    ctx.fillStyle='#A84C10';
+    for (const [dx,dy,r] of [[-s*0.18,-s*0.25,s*0.09],[s*0.06,-s*0.3,s*0.08],[-s*0.26,-s*0.02,s*0.07],[s*0.1,-s*0.06,s*0.08],[-s*0.04,s*0.14,s*0.07],[-s*0.22,s*0.1,s*0.07]])
+      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
+    // crispy bumps — highlight bumps on top
+    ctx.fillStyle='#F0A030';
+    for (const [dx,dy,r] of [[-s*0.16,-s*0.26,s*0.07],[s*0.08,-s*0.28,s*0.065],[-s*0.24,-s*0.04,s*0.055],[s*0.12,-s*0.08,s*0.065],[-s*0.02,s*0.12,s*0.055],[-s*0.2,s*0.08,s*0.055]])
+      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
+    // light crispy tips
+    ctx.fillStyle='#F8C860';
+    for (const [dx,dy,r] of [[-s*0.15,-s*0.27,s*0.04],[s*0.09,-s*0.3,s*0.035],[-s*0.01,s*0.13,s*0.032]])
+      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
+    // oil sheen highlight
+    ctx.fillStyle='rgba(255,240,180,0.38)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.16,y-s*0.26,s*0.09,s*0.055,-0.5,0,Math.PI*2); ctx.fill();
+    // white meat peek at top near bone
+    ctx.fillStyle='rgba(255,245,225,0.55)';
+    ctx.beginPath(); ctx.ellipse(x+s*0.06,y+s*0.06,s*0.07,s*0.04,0.1,0,Math.PI*2); ctx.fill();
   }
 
   _drawTteokbokki(ctx,x,y,s) {
-    // plate/bowl
-    ctx.fillStyle='#E8C080'; ctx.strokeStyle='#C09050'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.ellipse(x,y+s*0.3,s*0.38,s*0.1,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x-s*0.38,y+s*0.3); ctx.lineTo(x-s*0.3,y-s*0.1);
-    ctx.lineTo(x+s*0.3,y-s*0.1); ctx.lineTo(x+s*0.38,y+s*0.3); ctx.closePath();
-    ctx.fillStyle='#E8490A'; ctx.fill(); ctx.strokeStyle='#C03000'; ctx.lineWidth=1.5; ctx.stroke();
-    // sauce top ellipse
-    ctx.beginPath(); ctx.ellipse(x,y-s*0.1,s*0.3,s*0.08,0,0,Math.PI*2);
-    ctx.fillStyle='#F05020'; ctx.fill(); ctx.stroke();
-    // rice cakes (white cylinders)
-    for (const [dx,dy] of [[-s*0.14,s*0.06],[s*0.0,s*0.0],[s*0.14,s*0.04],[-s*0.07,-s*0.06],[s*0.08,-s*0.05]]) {
-      ctx.fillStyle='#FFF0E0'; ctx.strokeStyle='#DDD0C0'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.ellipse(x+dx,y+dy,s*0.075,s*0.05,0.15,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(x+dx,y+dy-s*0.08,s*0.075,s*0.05,0.15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // skewer stick
+    ctx.strokeStyle='#C8A060'; ctx.lineWidth=s*0.04; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.55); ctx.lineTo(x,y-s*0.5); ctx.stroke();
+    // stick tip
+    ctx.fillStyle='#C8A060';
+    ctx.beginPath(); ctx.moveTo(x,y-s*0.5); ctx.lineTo(x-s*0.03,y-s*0.42); ctx.lineTo(x+s*0.03,y-s*0.42); ctx.closePath(); ctx.fill();
+    // 4 tteok pieces from bottom to top
+    const tH=s*0.2, tW=s*0.16, gap=s*0.02;
+    const startY=y+s*0.36;
+    for (let i=0;i<4;i++) {
+      const ty=startY-i*(tH+gap);
+      // sauce coat (slightly wider, red)
+      ctx.fillStyle='#D83000'; ctx.strokeStyle='#A82000'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(x,ty,tW+s*0.01,s*0.055,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      // tteok side (white tube)
+      ctx.fillStyle='#FFF4E8'; ctx.strokeStyle='#E8DCC8'; ctx.lineWidth=1;
       ctx.beginPath();
-      ctx.moveTo(x+dx-s*0.075,y+dy); ctx.lineTo(x+dx-s*0.075,y+dy-s*0.08);
-      ctx.moveTo(x+dx+s*0.075,y+dy); ctx.lineTo(x+dx+s*0.075,y+dy-s*0.08);
-      ctx.strokeStyle='#DDD0C0'; ctx.stroke();
+      ctx.moveTo(x-(tW),ty);
+      ctx.lineTo(x-(tW),ty-tH);
+      ctx.lineTo(x+(tW),ty-tH);
+      ctx.lineTo(x+(tW),ty);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // sauce on side
+      ctx.fillStyle='rgba(210,50,0,0.55)';
+      ctx.beginPath();
+      ctx.moveTo(x-tW,ty-tH*0.1); ctx.lineTo(x-tW,ty-tH*0.5);
+      ctx.lineTo(x+tW,ty-tH*0.5); ctx.lineTo(x+tW,ty-tH*0.1);
+      ctx.closePath(); ctx.fill();
+      // tteok top ellipse
+      ctx.fillStyle='#FFF4E8'; ctx.strokeStyle='#E0D0C0'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(x,ty-tH,tW,s*0.055,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      // sauce gloss on top
+      ctx.fillStyle='rgba(240,60,10,0.7)';
+      ctx.beginPath(); ctx.ellipse(x,ty-tH,tW,s*0.055,0,0,Math.PI*2); ctx.fill();
+      // highlight
+      ctx.fillStyle='rgba(255,160,100,0.4)';
+      ctx.beginPath(); ctx.ellipse(x-tW*0.3,ty-tH-s*0.01,tW*0.35,s*0.025,0,0,Math.PI*2); ctx.fill();
     }
+    // sauce drip
+    ctx.fillStyle='rgba(200,30,0,0.6)';
+    ctx.beginPath(); ctx.moveTo(x+tW*0.6,startY-tH);
+    ctx.quadraticCurveTo(x+tW*0.7,startY-tH+s*0.05,x+tW*0.55,startY-tH+s*0.08);
+    ctx.closePath(); ctx.fill();
   }
 
   _drawRamen(ctx,x,y,s) {
