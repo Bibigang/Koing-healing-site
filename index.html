@@ -423,6 +423,17 @@ class Pig {
   _drawFace(ctx,s) {
     ctx.save();
     ctx.translate(this.faceOffX, this.faceOffY);
+    // squash-stretch: scale along drag direction
+    const fd=Math.hypot(this.faceOffX,this.faceOffY);
+    if (fd>0.5) {
+      const nx=this.faceOffX/fd, ny=this.faceOffY/fd;
+      const str=Math.min(fd/(this.r*0.6),1);
+      const sx=1+str*0.28, sy=1-str*0.18;
+      ctx.translate(this.cx, this.cy);
+      ctx.transform(1+(sx-1)*nx*nx, (sx-1)*nx*ny, (sx-1)*nx*ny, 1+(sx-1)*ny*ny, 0, 0);
+      ctx.scale(1,sy+(sx-1)*Math.abs(ny));
+      ctx.translate(-this.cx, -this.cy);
+    }
     const {cx,cy,r}=this;
     ctx.save();
     ctx.globalAlpha=0.28+this.petLevel*0.38; ctx.fillStyle='#FF4477';
