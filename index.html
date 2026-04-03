@@ -1000,23 +1000,50 @@ function drawSceneDecorations(scene,ox) {
   else if (scene.id==='cozy') {
     ctx.fillStyle='rgba(100,65,30,0.42)';
     ctx.fillRect(ox,gy-H*0.012,W,H*0.012);
-    const wx=ox+W*0.7, wy=H*0.1, ww=W*0.2, wh=H*0.26;
-    ctx.fillStyle='#AAD4F0'; ctx.fillRect(wx,wy,ww,wh);
-    ctx.strokeStyle='#CCBBAA'; ctx.lineWidth=4; ctx.strokeRect(wx,wy,ww,wh);
-    ctx.lineWidth=2;
+    const wx=ox+W*0.68, wy=H*0.08, ww=W*0.22, wh=H*0.28;
+    // window glass
+    ctx.fillStyle='#C8E8F8'; ctx.fillRect(wx,wy,ww,wh);
+    // window cross divider
+    ctx.strokeStyle='#D4C4A8'; ctx.lineWidth=3;
     ctx.beginPath();
     ctx.moveTo(wx+ww/2,wy); ctx.lineTo(wx+ww/2,wy+wh);
-    ctx.moveTo(wx,wy+wh/2); ctx.lineTo(wx+ww,wy+wh/2);
+    ctx.moveTo(wx,wy+wh*0.48); ctx.lineTo(wx+ww,wy+wh*0.48);
     ctx.stroke();
-    ctx.fillStyle='rgba(255,160,160,0.62)';
-    ctx.beginPath();
-    ctx.moveTo(wx-ww*0.06,wy-H*0.01);
-    ctx.quadraticCurveTo(wx+ww*0.12,wy+wh*0.28,wx+ww*0.18,wy+wh);
-    ctx.lineTo(wx-ww*0.06,wy+wh); ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(wx+ww+ww*0.06,wy-H*0.01);
-    ctx.quadraticCurveTo(wx+ww*0.88,wy+wh*0.28,wx+ww*0.82,wy+wh);
-    ctx.lineTo(wx+ww+ww*0.06,wy+wh); ctx.closePath(); ctx.fill();
+    // window frame
+    ctx.strokeStyle='#C4A880'; ctx.lineWidth=5; ctx.strokeRect(wx,wy,ww,wh);
+    // curtain rod
+    ctx.strokeStyle='#A08060'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(wx-ww*0.1,wy-H*0.008); ctx.lineTo(wx+ww+ww*0.1,wy-H*0.008); ctx.stroke();
+    ctx.fillStyle='#A08060';
+    ctx.beginPath(); ctx.arc(wx-ww*0.1,wy-H*0.008,H*0.008,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(wx+ww+ww*0.1,wy-H*0.008,H*0.008,0,Math.PI*2); ctx.fill();
+    // left curtain panel with folds
+    { const cx0=wx-ww*0.08, cy0=wy-H*0.012, cpw=ww*0.38, cph=wh+H*0.035;
+      ctx.fillStyle='rgba(170,115,130,0.82)';
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0);
+      ctx.bezierCurveTo(cx0+cpw*0.55,cy0+cph*0.15, cx0+cpw*0.3,cy0+cph*0.45, cx0+cpw*0.45,cy0+cph);
+      ctx.lineTo(cx0,cy0+cph); ctx.closePath(); ctx.fill();
+      // fold highlight
+      ctx.strokeStyle='rgba(210,160,175,0.55)'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx0+cpw*0.14,cy0+cph*0.08);
+      ctx.bezierCurveTo(cx0+cpw*0.3,cy0+cph*0.25, cx0+cpw*0.18,cy0+cph*0.55, cx0+cpw*0.28,cy0+cph*0.88);
+      ctx.stroke();
+    }
+    // right curtain panel with folds
+    { const cx0=wx+ww+ww*0.08, cy0=wy-H*0.012, cpw=ww*0.38, cph=wh+H*0.035;
+      ctx.fillStyle='rgba(170,115,130,0.82)';
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0);
+      ctx.bezierCurveTo(cx0-cpw*0.55,cy0+cph*0.15, cx0-cpw*0.3,cy0+cph*0.45, cx0-cpw*0.45,cy0+cph);
+      ctx.lineTo(cx0,cy0+cph); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(210,160,175,0.55)'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx0-cpw*0.14,cy0+cph*0.08);
+      ctx.bezierCurveTo(cx0-cpw*0.3,cy0+cph*0.25, cx0-cpw*0.18,cy0+cph*0.55, cx0-cpw*0.28,cy0+cph*0.88);
+      ctx.stroke();
+    }
     ctx.save(); ctx.globalAlpha=0.68;
     ctx.beginPath(); ctx.ellipse(ox+W*0.5,gy+H*0.04,W*0.26,H*0.05,0,0,Math.PI*2);
     ctx.fillStyle='#CC7744'; ctx.fill(); ctx.strokeStyle='#AA5522'; ctx.lineWidth=2; ctx.stroke();
@@ -1024,17 +1051,43 @@ function drawSceneDecorations(scene,ox) {
     ctx.beginPath(); ctx.ellipse(ox+W*0.5,gy+H*0.04,W*0.2,H*0.036,0,0,Math.PI*2);
     ctx.strokeStyle='#FFAA66'; ctx.lineWidth=1.5; ctx.stroke();
     ctx.restore();
-    // sofa
-    { const sx=ox+W*0.03, sy=gy-H*0.17, sw=W*0.36, sh=H*0.14;
-      ctx.fillStyle='#C07850'; ctx.beginPath();
-      ctx.roundRect(sx,sy+sh*0.28,sw,sh*0.72,8); ctx.fill();
-      ctx.fillStyle='#D08A60';
-      ctx.beginPath(); ctx.roundRect(sx,sy,sw*0.16,sh*0.85,6); ctx.fill();
-      ctx.beginPath(); ctx.roundRect(sx+sw-sw*0.16,sy,sw*0.16,sh*0.85,6); ctx.fill();
-      ctx.fillStyle='#E0A070';
-      ctx.beginPath(); ctx.roundRect(sx,sy+sh*0.28,sw,sh*0.35,6); ctx.fill();
-      ctx.fillStyle='#C07850'; ctx.strokeStyle='#8B5030'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.roundRect(sx,sy+sh*0.63,sw,sh*0.1,4); ctx.fill(); ctx.stroke();
+    // 1인용 카우치 소파 (와인 컬러)
+    { const sx=ox+W*0.03, sy=gy-H*0.2, sw=W*0.36, sh=H*0.17;
+      const cDark='#4A1828', cMid='#6B2440', cLight='#8C3458', cHighlight='#A84870';
+      const legH=H*0.022, legW=W*0.016;
+      // legs
+      ctx.fillStyle='#2E1008';
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.1,sy+sh,legW,legH,3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.86,sy+sh,legW,legH,3); ctx.fill();
+      // body frame (outer shadow)
+      ctx.fillStyle=cDark;
+      ctx.beginPath(); ctx.roundRect(sx,sy+sh*0.22,sw,sh*0.78,[6,6,10,10]); ctx.fill();
+      // backrest
+      ctx.fillStyle=cDark;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.1,sy,sw*0.8,sh*0.7,[14,14,4,4]); ctx.fill();
+      ctx.fillStyle=cMid;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.12,sy+sh*0.04,sw*0.76,sh*0.56,[12,12,4,4]); ctx.fill();
+      // backrest top highlight strip
+      ctx.fillStyle=cLight;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.14,sy+sh*0.05,sw*0.72,sh*0.14,[10,10,2,2]); ctx.fill();
+      // seat cushion
+      ctx.fillStyle=cMid;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.1,sy+sh*0.52,sw*0.8,sh*0.46,[4,4,8,8]); ctx.fill();
+      ctx.fillStyle=cLight;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.12,sy+sh*0.54,sw*0.76,sh*0.22,[6,6,2,2]); ctx.fill();
+      // cushion crease line
+      ctx.strokeStyle=cDark; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(sx+sw*0.5,sy+sh*0.54); ctx.lineTo(sx+sw*0.5,sy+sh*0.98); ctx.stroke();
+      // left armrest
+      ctx.fillStyle=cDark;
+      ctx.beginPath(); ctx.roundRect(sx,sy+sh*0.2,sw*0.12,sh*0.8,[8,4,6,8]); ctx.fill();
+      ctx.fillStyle=cLight;
+      ctx.beginPath(); ctx.roundRect(sx-sw*0.005,sy+sh*0.18,sw*0.13,sh*0.12,[6,6,2,2]); ctx.fill();
+      // right armrest
+      ctx.fillStyle=cDark;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.88,sy+sh*0.2,sw*0.12,sh*0.8,[4,8,8,6]); ctx.fill();
+      ctx.fillStyle=cLight;
+      ctx.beginPath(); ctx.roundRect(sx+sw*0.875,sy+sh*0.18,sw*0.13,sh*0.12,[6,6,2,2]); ctx.fill();
     }
     // wall shelf
     { const shx=ox+W*0.12, shy=H*0.25, shw=W*0.24, shth=H*0.018;
