@@ -174,14 +174,14 @@ const SCENES = [
     sky:['#0D1B3E','#152850'], ground:['#1A3A1A','#0D2010'], groundY:0.6,
     shadowColor:'rgba(0,20,0,0.35)',
     cloudFill:null,
-    items: [{type:'cocoa',rx:0.18,ry:0.78},{type:'cookie',rx:0.5,ry:0.84},{type:'lollipop',rx:0.82,ry:0.78}],
+    items: [{type:'chicken',rx:0.18,ry:0.78},{type:'tteokbokki',rx:0.5,ry:0.82},{type:'ramen',rx:0.82,ry:0.78}],
   },
   {
     id:'rainy', label:'비오는 날',
     sky:['#6A8A9A','#8AAABB'], ground:['#527830','#325018'], groundY:0.6,
     shadowColor:'rgba(20,50,0,0.22)',
     cloudFill:'rgba(160,175,185,0.95)', cloudShadow:'rgba(60,90,120,0.25)',
-    items: [{type:'hotmilk',rx:0.18,ry:0.78},{type:'teacup',rx:0.5,ry:0.84},{type:'clover',rx:0.82,ry:0.78}],
+    items: [{type:'cocoa',rx:0.18,ry:0.78},{type:'pajeon',rx:0.5,ry:0.82},{type:'samgyeopsal',rx:0.82,ry:0.78}],
   },
   {
     id:'cozy', label:'아늑한 방',
@@ -601,8 +601,13 @@ class Food {
       bulgogi:  ()=>this._drawBulgogi(ctx,x,y,s),
       soju:     ()=>this._drawSoju(ctx,x,y,s),
       coffee:   ()=>this._drawCoffee(ctx,x,y,s),
-      odeng:    ()=>this._drawOdeng(ctx,x,y,s),
-      icecream: ()=>this._drawIcecream(ctx,x,y,s),
+      odeng:      ()=>this._drawOdeng(ctx,x,y,s),
+      icecream:   ()=>this._drawIcecream(ctx,x,y,s),
+      chicken:    ()=>this._drawChicken(ctx,x,y,s),
+      tteokbokki: ()=>this._drawTteokbokki(ctx,x,y,s),
+      ramen:      ()=>this._drawRamen(ctx,x,y,s),
+      pajeon:     ()=>this._drawPajeon(ctx,x,y,s),
+      samgyeopsal:()=>this._drawSamgyeopsal(ctx,x,y,s),
     };
     (m[this.type]||m.flower)();
   }
@@ -943,6 +948,141 @@ class Food {
     // drip
     ctx.fillStyle='rgba(255,220,200,0.7)';
     ctx.beginPath(); ctx.moveTo(x+s*0.18,y+s*0.08); ctx.quadraticCurveTo(x+s*0.22,y+s*0.18,x+s*0.16,y+s*0.22); ctx.closePath(); ctx.fill();
+  }
+
+  _drawChicken(ctx,x,y,s) {
+    // bone
+    ctx.strokeStyle='#EEE0C0'; ctx.lineWidth=s*0.07; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x+s*0.06,y+s*0.52); ctx.lineTo(x+s*0.1,y+s*0.12); ctx.stroke();
+    ctx.fillStyle='#EEE0C0';
+    ctx.beginPath(); ctx.arc(x+s*0.06,y+s*0.52,s*0.07,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s*0.1,y+s*0.12,s*0.05,0,Math.PI*2); ctx.fill();
+    // meat body (crispy golden)
+    ctx.fillStyle='#D4842A'; ctx.strokeStyle='#B06018'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(x-s*0.04,y-s*0.08,s*0.32,s*0.38,0.2,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // crispy coating bumps
+    ctx.fillStyle='#E8A040';
+    for (const [dx,dy,r] of [[-s*0.12,-s*0.22,s*0.1],[s*0.1,-s*0.28,s*0.09],[-s*0.22,-s*0.04,s*0.08],[s*0.14,-s*0.08,s*0.09],[s*0.0,s*0.1,s*0.08],[-s*0.08,s*0.16,s*0.07]]) {
+      ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
+    }
+    // shine
+    ctx.fillStyle='rgba(255,230,160,0.32)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.12,y-s*0.22,s*0.1,s*0.06,-0.5,0,Math.PI*2); ctx.fill();
+  }
+
+  _drawTteokbokki(ctx,x,y,s) {
+    // plate/bowl
+    ctx.fillStyle='#E8C080'; ctx.strokeStyle='#C09050'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.3,s*0.38,s*0.1,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.38,y+s*0.3); ctx.lineTo(x-s*0.3,y-s*0.1);
+    ctx.lineTo(x+s*0.3,y-s*0.1); ctx.lineTo(x+s*0.38,y+s*0.3); ctx.closePath();
+    ctx.fillStyle='#E8490A'; ctx.fill(); ctx.strokeStyle='#C03000'; ctx.lineWidth=1.5; ctx.stroke();
+    // sauce top ellipse
+    ctx.beginPath(); ctx.ellipse(x,y-s*0.1,s*0.3,s*0.08,0,0,Math.PI*2);
+    ctx.fillStyle='#F05020'; ctx.fill(); ctx.stroke();
+    // rice cakes (white cylinders)
+    for (const [dx,dy] of [[-s*0.14,s*0.06],[s*0.0,s*0.0],[s*0.14,s*0.04],[-s*0.07,-s*0.06],[s*0.08,-s*0.05]]) {
+      ctx.fillStyle='#FFF0E0'; ctx.strokeStyle='#DDD0C0'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(x+dx,y+dy,s*0.075,s*0.05,0.15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(x+dx,y+dy-s*0.08,s*0.075,s*0.05,0.15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x+dx-s*0.075,y+dy); ctx.lineTo(x+dx-s*0.075,y+dy-s*0.08);
+      ctx.moveTo(x+dx+s*0.075,y+dy); ctx.lineTo(x+dx+s*0.075,y+dy-s*0.08);
+      ctx.strokeStyle='#DDD0C0'; ctx.stroke();
+    }
+  }
+
+  _drawRamen(ctx,x,y,s) {
+    // bowl outer
+    ctx.fillStyle='#F0E0C0'; ctx.strokeStyle='#C8A870'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.36,y+s*0.08);
+    ctx.quadraticCurveTo(x-s*0.38,y+s*0.46,x,y+s*0.5);
+    ctx.quadraticCurveTo(x+s*0.38,y+s*0.46,x+s*0.36,y+s*0.08);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // broth
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.36,s*0.09,0,0,Math.PI*2);
+    ctx.fillStyle='#C85020'; ctx.fill();
+    // noodle swirls
+    ctx.strokeStyle='#F8E8B0'; ctx.lineWidth=2; ctx.lineCap='round';
+    for (const [cx2,cy2,r,sa,ea] of [
+      [x-s*0.1,y+s*0.16,s*0.12,0.2,Math.PI*1.8],
+      [x+s*0.08,y+s*0.2,s*0.1,-0.3,Math.PI*1.6],
+      [x-s*0.04,y+s*0.3,s*0.14,0.4,Math.PI*1.9],
+    ]) {
+      ctx.beginPath(); ctx.arc(cx2,cy2,r,sa,ea); ctx.stroke();
+    }
+    // egg half
+    ctx.fillStyle='#FFF8E0'; ctx.strokeStyle='#E0D090'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(x+s*0.18,y+s*0.18,s*0.1,s*0.08,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#F8B820';
+    ctx.beginPath(); ctx.arc(x+s*0.18,y+s*0.18,s*0.05,0,Math.PI*2); ctx.fill();
+    // steam
+    ctx.strokeStyle='rgba(220,160,80,0.38)'; ctx.lineWidth=1.8; ctx.lineCap='round';
+    for (const [dx,flip] of [[-s*0.1,1],[s*0.08,-1]]) {
+      ctx.beginPath();
+      ctx.moveTo(x+dx,y-s*0.04);
+      ctx.bezierCurveTo(x+dx+flip*s*0.07,y-s*0.18,x+dx-flip*s*0.07,y-s*0.3,x+dx,y-s*0.42);
+      ctx.stroke();
+    }
+  }
+
+  _drawPajeon(ctx,x,y,s) {
+    // plate
+    ctx.fillStyle='#E0C890'; ctx.strokeStyle='#C0A060'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.36,s*0.38,s*0.09,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // pancake body
+    ctx.fillStyle='#D4A840'; ctx.strokeStyle='#B08020'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.34,s*0.28,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // crispy edge
+    ctx.fillStyle='#C49030';
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.34,s*0.28,0,0,Math.PI*2);
+    ctx.arc(x,y+s*0.08,s*0.26,0,Math.PI*2,true); ctx.fill();
+    // green onion lines
+    ctx.strokeStyle='#4A9030'; ctx.lineWidth=2.5; ctx.lineCap='round';
+    for (const [dx1,dy1,dx2,dy2] of [
+      [-s*0.28,y+s*0.0,s*0.22,y-s*0.06],[-s*0.2,y+s*0.12,s*0.28,y+s*0.06],
+      [-s*0.24,y-s*0.1,s*0.18,y-s*0.16],[-s*0.14,y+s*0.2,s*0.26,y+s*0.16]
+    ]) {
+      ctx.beginPath(); ctx.moveTo(x+dx1,dy1); ctx.lineTo(x+dx2,dy2); ctx.stroke();
+    }
+    // surface sheen
+    ctx.fillStyle='rgba(255,230,120,0.22)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.06,y-s*0.04,s*0.16,s*0.1,-0.3,0,Math.PI*2); ctx.fill();
+  }
+
+  _drawSamgyeopsal(ctx,x,y,s) {
+    // grill plate
+    ctx.fillStyle='#484040'; ctx.strokeStyle='#302828'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.38,s*0.1,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#383030';
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.3,s*0.07,0,0,Math.PI*2); ctx.fill();
+    // grill lines
+    ctx.strokeStyle='#282020'; ctx.lineWidth=1.5;
+    for (const dx of [-s*0.14,s*0,s*0.14]) {
+      ctx.beginPath(); ctx.moveTo(x+dx,y+s*0.22); ctx.lineTo(x+dx,y+s*0.42); ctx.stroke();
+    }
+    // pork belly slices
+    for (const [dx,dy,rot] of [[-s*0.12,s*0.06,-0.2],[s*0.02,s*0.0,0.1],[s*0.14,s*0.04,0.25]]) {
+      ctx.save(); ctx.translate(x+dx,y+dy); ctx.rotate(rot);
+      // fat layer
+      ctx.fillStyle='#F0DCC8'; ctx.strokeStyle='#D0B8A0'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.1,s*0.24,s*0.22,4); ctx.fill(); ctx.stroke();
+      // meat layer
+      ctx.fillStyle='#CC5030';
+      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.02,s*0.24,s*0.1,2); ctx.fill();
+      // fat stripe
+      ctx.fillStyle='rgba(255,240,220,0.6)';
+      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.06,s*0.24,s*0.04,1); ctx.fill();
+      ctx.restore();
+    }
+    // sizzle smoke
+    ctx.strokeStyle='rgba(180,160,140,0.35)'; ctx.lineWidth=1.5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x-s*0.08,y-s*0.06);
+    ctx.bezierCurveTo(x-s*0.16,y-s*0.18,x+s*0.0,y-s*0.28,x-s*0.08,y-s*0.38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+s*0.1,y-s*0.02);
+    ctx.bezierCurveTo(x+s*0.18,y-s*0.14,x+s*0.04,y-s*0.24,x+s*0.1,y-s*0.34); ctx.stroke();
   }
 }
 
@@ -1848,6 +1988,26 @@ const MSGS = {
   coffee: [
     '카페인이 곧 의지꼬잉','한 모금에 각성꼬잉','졸려도 해야 하꼬잉',
     '커피 없인 못 살꼬잉','오늘도 버티꼬잉','향부터 힐링꼬잉',
+  ],
+  chicken: [
+    '치킨이 최고꼬잉','야식의 왕이꼬잉','살 찌는 소리가 들리꼬잉',
+    '먹고 후회는 내일꼬잉','치킨 앞에 장사 없꼬잉','이건 참을 수 없꼬잉',
+  ],
+  tteokbokki: [
+    '맵고 달콤하꼬잉','떡볶이는 국민 간식꼬잉','한 입에 힐링꼬잉',
+    '매운 거 먹으면 스트레스 풀리꼬잉','오늘도 떡볶이꼬잉','떡 하나 더 달라꼬잉',
+  ],
+  ramen: [
+    '야식은 라면이지꼬잉','끓이는 것도 귀찮꼬잉','컵라면도 맛있꼬잉',
+    '밤에 먹으면 더 맛있꼬잉','후루룩꼬잉','국물이 진리꼬잉',
+  ],
+  pajeon: [
+    '비 오는 날엔 파전이지꼬잉','노릇노릇하꼬잉','막걸리랑 먹고 싶꼬잉',
+    '부침개 소리 들리꼬잉','오늘 기분 이 정도꼬잉','바삭하꼬잉',
+  ],
+  samgyeopsal: [
+    '삼겹살이 최고꼬잉','지글지글꼬잉','쌈 싸 먹으면 완벽꼬잉',
+    '비 오는 날엔 고기꼬잉','다 구워지꼬잉','먹고 살꼬잉',
   ],
 };
 const _bubbleEl=document.getElementById('bubble');
