@@ -155,7 +155,7 @@ const SCENES = [
     sky:['#5C1E58','#C43650','#EF6428','#FFB040','#FFE068'], ground:['#B8724A','#7A3C18'], groundY:0.62,
     shadowColor:'rgba(90,30,0,0.28)',
     cloudFill:'rgba(255,155,100,0.78)', cloudShadow:'rgba(120,35,75,0.38)',
-    items: [{type:'camera',rx:0.18,ry:0.78},{type:'bulgogi',rx:0.5,ry:0.82},{type:'soju',rx:0.82,ry:0.78}],
+    items: [{type:'odeng',rx:0.18,ry:0.78},{type:'icecream',rx:0.5,ry:0.82},{type:'soju',rx:0.82,ry:0.78}],
   },
   {
     id:'night', label:'밤',
@@ -585,10 +585,12 @@ class Food {
       cocoa:   ()=>this._drawCocoa(ctx,x,y,s),
       lollipop:()=>this._drawLollipop(ctx,x,y,s),
       macaron: ()=>this._drawMacaron(ctx,x,y,s),
-      camera:  ()=>this._drawCamera(ctx,x,y,s),
-      bulgogi: ()=>this._drawBulgogi(ctx,x,y,s),
-      soju:    ()=>this._drawSoju(ctx,x,y,s),
-      coffee:  ()=>this._drawCoffee(ctx,x,y,s),
+      camera:   ()=>this._drawCamera(ctx,x,y,s),
+      bulgogi:  ()=>this._drawBulgogi(ctx,x,y,s),
+      soju:     ()=>this._drawSoju(ctx,x,y,s),
+      coffee:   ()=>this._drawCoffee(ctx,x,y,s),
+      odeng:    ()=>this._drawOdeng(ctx,x,y,s),
+      icecream: ()=>this._drawIcecream(ctx,x,y,s),
     };
     (m[this.type]||m.flower)();
   }
@@ -880,6 +882,55 @@ class Food {
       ctx.bezierCurveTo(x+dx+flip*s*0.06,y-s*0.33,x+dx-flip*s*0.06,y-s*0.43,x+dx,y-s*0.54);
       ctx.stroke();
     }
+  }
+  _drawOdeng(ctx,x,y,s) {
+    // skewer stick
+    ctx.strokeStyle='#C8A060'; ctx.lineWidth=s*0.038; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x+s*0.06,y+s*0.52); ctx.lineTo(x-s*0.04,y-s*0.48); ctx.stroke();
+    // fish cake folds (3 loops on stick)
+    ctx.fillStyle='#F5E0A0'; ctx.strokeStyle='#D4B860'; ctx.lineWidth=1.8;
+    for (const [dy,w,h] of [[s*0.2,s*0.3,s*0.12],[s*0.02,s*0.32,s*0.13],[-s*0.18,s*0.28,s*0.11]]) {
+      ctx.beginPath(); ctx.ellipse(x,y+dy,w,h,0.12,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+    // top edge highlight
+    ctx.fillStyle='rgba(255,240,180,0.45)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.04,y-s*0.16,s*0.22,s*0.07,-0.1,0,Math.PI*2); ctx.fill();
+    // steam
+    ctx.strokeStyle='rgba(200,170,100,0.38)'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.08,y-s*0.34);
+    ctx.bezierCurveTo(x-s*0.18,y-s*0.46,x+s*0.02,y-s*0.56,x-s*0.08,y-s*0.66); ctx.stroke();
+  }
+
+  _drawIcecream(ctx,x,y,s) {
+    // cone
+    ctx.fillStyle='#E8C07A'; ctx.strokeStyle='#C89A48'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.22,y+s*0.12);
+    ctx.lineTo(x+s*0.22,y+s*0.12);
+    ctx.lineTo(x,y+s*0.52);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // cone grid lines
+    ctx.strokeStyle='rgba(180,130,50,0.4)'; ctx.lineWidth=1;
+    for (const t of [0.28,0.52,0.76]) {
+      const w=s*0.22*(1-t*0.8);
+      ctx.beginPath(); ctx.moveTo(x-w,y+s*0.12+t*s*0.4); ctx.lineTo(x+w,y+s*0.12+t*s*0.4); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.12); ctx.lineTo(x,y+s*0.52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-s*0.11,y+s*0.12); ctx.lineTo(x-s*0.04,y+s*0.52); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+s*0.11,y+s*0.12); ctx.lineTo(x+s*0.04,y+s*0.52); ctx.stroke();
+    // soft serve swirl (3 loops)
+    ctx.fillStyle='#FFF5F0'; ctx.strokeStyle='#F0D0C0'; ctx.lineWidth=1.5;
+    const sw=s*0.22, sh=s*0.13;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.12,sw,sh,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x+s*0.04,y-s*0.04,sw*0.82,sh,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x,y-s*0.18,sw*0.62,sh*0.9,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x-s*0.02,y-s*0.3,sw*0.4,sh*0.8,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // swirl tip
+    ctx.beginPath(); ctx.arc(x,y-s*0.4,sw*0.15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // drip
+    ctx.fillStyle='rgba(255,220,200,0.7)';
+    ctx.beginPath(); ctx.moveTo(x+s*0.18,y+s*0.08); ctx.quadraticCurveTo(x+s*0.22,y+s*0.18,x+s*0.16,y+s*0.22); ctx.closePath(); ctx.fill();
   }
 }
 
@@ -1768,13 +1819,13 @@ const MSGS = {
     '원래 이런 거 있꼬잉','스트레스는 희석이 답꼬잉','감정은 음료로 처리 가능꼬잉','한 잔이면 충분꼬잉',
     '어쩌겠꼬잉','뭐 다 그렇꼬잉','그래봤자 내일 또 출근이꼬잉','취하면 다 잊혀지꼬잉',
   ],
-  camera: [
-    '찍어봤자 안 올리꼬잉','추억은 폰 안에 쌓이꼬잉','셔터 누르면 기억이 되꼬잉',
-    '오늘 노을 예쁘꼬잉','나중에 보면 웃기꼬잉','찰칵꼬잉',
+  odeng: [
+    '따뜻하꼬잉','포장마차 감성꼬잉','국물이 진리꼬잉',
+    '어묵 하나면 충분꼬잉','노을 보며 먹으면 최고꼬잉','뜨끈뜨끈꼬잉',
   ],
-  bulgogi: [
-    '배부르면 다 해결꼬잉','불고기가 최고꼬잉','이건 진짜 맛있꼬잉',
-    '먹고 힘내꼬잉','밥심으로 사는 거꼬잉','고기 앞에 장사 없꼬잉',
+  icecream: [
+    '달달하꼬잉','한 입에 행복꼬잉','녹기 전에 먹어야 하꼬잉',
+    '아이스크림엔 이유가 없꼬잉','노을이랑 잘 어울리꼬잉','오늘의 보상이꼬잉',
   ],
   soju: [
     '오늘 하루 수고했꼬잉','소주 한 잔에 다 털꼬잉','취해도 괜찮꼬잉',
