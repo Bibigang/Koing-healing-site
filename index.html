@@ -1136,22 +1136,46 @@ class Food {
     for (const [dx,sy,rw,rh,ang] of spots) {
       ctx.beginPath(); ctx.ellipse(x+dx,sy,rw,rh,ang,0,Math.PI*2); ctx.fill();
     }
-    // green onion stems (thin, multiple, varying angles)
-    const onions=[
-      [-s*0.26,y+s*0.04,s*0.2,y-s*0.08,1.6],
-      [s*0.16,y+s*0.1,s*0.28,y-s*0.04,1.8],
-      [-s*0.18,y-s*0.1,s*0.24,y-s*0.18,1.4],
-      [-s*0.06,y+s*0.2,s*0.18,y+s*0.08,1.6],
-      [-s*0.3,y+s*0.12,s*0.1,y+s*0.04,1.5],
-      [s*0.04,y-s*0.14,s*0.3,y-s*0.06,1.7],
-    ];
-    for (const [x1,y1,x2,y2,lw] of onions) {
-      ctx.beginPath(); ctx.moveTo(x+x1,y1); ctx.lineTo(x+x2,y2);
-      ctx.strokeStyle='#3A7A22'; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.stroke();
-      // stem node dots
-      ctx.beginPath(); ctx.arc(x+x1+(x+x2-(x+x1))*0.4,(y1+y2)*0.5,lw*0.7,0,Math.PI*2);
-      ctx.fillStyle='#4A8A28'; ctx.fill();
-    }
+    // green onion leaves — filled ribbon shapes (not lines)
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.33,s*0.27,0,0,Math.PI*2); ctx.clip();
+    const drawLeaf=(sx,sy,ex,ey,hw,bow)=>{
+      const dx=ex-sx,dy=ey-sy,len=Math.hypot(dx,dy);
+      if(len<1) return;
+      const nx=dx/len,ny=dy/len,px=-ny,py=nx;
+      const mx=(sx+ex)/2+px*bow, my=(sy+ey)/2+py*bow;
+      const s1x=sx+px*hw,s1y=sy+py*hw; // left base
+      const e1x=ex+px*hw,e1y=ey+py*hw; // left tip
+      const s2x=sx-px*hw,s2y=sy-py*hw; // right base
+      const e2x=ex-px*hw,e2y=ey-py*hw; // right tip
+      const c1x=mx+px*hw,c1y=my+py*hw;
+      const c2x=mx-px*hw,c2y=my-py*hw;
+      ctx.beginPath();
+      ctx.moveTo(s1x,s1y);
+      ctx.quadraticCurveTo(c1x,c1y,e1x,e1y);                          // left edge curved
+      ctx.quadraticCurveTo(ex+nx*hw*1.5,ey+ny*hw*1.5,e2x,e2y);        // rounded tip
+      ctx.quadraticCurveTo(c2x,c2y,s2x,s2y);                          // right edge curved
+      ctx.quadraticCurveTo(sx-nx*hw*1.5,sy-ny*hw*1.5,s1x,s1y);        // rounded base
+      ctx.closePath();
+      // width-direction gradient for depth
+      const g=ctx.createLinearGradient(s1x,s1y,s2x,s2y);
+      g.addColorStop(0,'#255815'); g.addColorStop(0.28,'#4EA028');
+      g.addColorStop(0.6,'#58B030'); g.addColorStop(1,'#226012');
+      ctx.fillStyle=g; ctx.fill();
+      // center vein (midrib)
+      ctx.beginPath();
+      ctx.moveTo(sx+nx*hw*0.4,sy+ny*hw*0.4);
+      ctx.quadraticCurveTo(mx,my,ex-nx*hw*0.4,ey-ny*hw*0.4);
+      ctx.strokeStyle='rgba(18,65,5,0.28)'; ctx.lineWidth=hw*0.5; ctx.lineCap='round'; ctx.stroke();
+    };
+    // leaves: [sx, sy, ex, ey, halfWidth, bow]
+    drawLeaf(x-s*0.29,y+s*0.14, x+s*0.21,y+s*0.0,  s*0.032,  s*0.048);
+    drawLeaf(x-s*0.14,y+s*0.23, x+s*0.29,y+s*0.09, s*0.028, -s*0.05);
+    drawLeaf(x-s*0.25,y-s*0.03, x+s*0.17,y-s*0.15, s*0.026,  s*0.04);
+    drawLeaf(x-s*0.04,y+s*0.27, x+s*0.22,y+s*0.1,  s*0.029, -s*0.042);
+    drawLeaf(x-s*0.31,y+s*0.07, x+s*0.05,y-s*0.02, s*0.022,  s*0.032);
+    drawLeaf(x+s*0.01,y-s*0.17, x+s*0.29,y-s*0.04, s*0.025,  s*0.044);
+    ctx.restore();
     // oil gloss highlight
     ctx.fillStyle='rgba(255,245,140,0.18)';
     ctx.beginPath(); ctx.ellipse(x-s*0.08,y-s*0.06,s*0.18,s*0.11,-0.35,0,Math.PI*2); ctx.fill();
