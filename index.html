@@ -224,6 +224,7 @@ class Pig {
       {x:this.cx+this.r*0.52,y:this.cy-this.r*0.78,vx:0,vy:0},
     ];
     this.earDragIdx=-1; this.earPullTimer=0;
+    this.faceOffX=0; this.faceOffY=0; this.faceVX=0; this.faceVY=0;
   }
   constructor(x) { this.resetAt(x); }
 
@@ -283,6 +284,19 @@ class Pig {
       ep.vy=(ep.vy+(ty-ep.y)*0.22)*0.68;
       ep.x+=ep.vx; ep.y+=ep.vy;
     }
+    // face jelly: springs toward drag displacement, snaps back on release
+    if (this.active&&this.dragIdx>=0) {
+      const p=this.pts[this.dragIdx];
+      const tx=(p.x-(this.cx+p.ox))*0.22;
+      const ty=(p.y-(this.cy+p.oy))*0.22;
+      this.faceVX=(this.faceVX+(tx-this.faceOffX)*0.18)*0.72;
+      this.faceVY=(this.faceVY+(ty-this.faceOffY)*0.18)*0.72;
+    } else {
+      this.faceVX=(this.faceVX-this.faceOffX*0.24)*0.68;
+      this.faceVY=(this.faceVY-this.faceOffY*0.24)*0.68;
+    }
+    this.faceOffX+=this.faceVX;
+    this.faceOffY+=this.faceVY;
   }
 
   pointerDown(x,y) {
@@ -407,6 +421,8 @@ class Pig {
   }
 
   _drawFace(ctx,s) {
+    ctx.save();
+    ctx.translate(this.faceOffX, this.faceOffY);
     const {cx,cy,r}=this;
     ctx.save();
     ctx.globalAlpha=0.28+this.petLevel*0.38; ctx.fillStyle='#FF4477';
@@ -428,6 +444,7 @@ class Pig {
     }
     this._drawEyes(ctx,s);
     this._drawMouth(ctx,s);
+    ctx.restore(); // end face translate
   }
 
   _drawEyes(ctx,s) {
