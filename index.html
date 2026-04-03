@@ -747,20 +747,62 @@ class Food {
   }
 
   _drawCocoa(ctx,x,y,s) {
+    // cup body
+    const cupG=ctx.createLinearGradient(x-s*0.23,0,x+s*0.23,0);
+    cupG.addColorStop(0,'#6A3A24'); cupG.addColorStop(0.45,'#8C5438'); cupG.addColorStop(1,'#5A2E18');
     ctx.beginPath(); ctx.roundRect(x-s*0.23,y-s*0.06,s*0.46,s*0.5,s*0.07);
-    ctx.fillStyle='#7B4A30'; ctx.fill(); ctx.strokeStyle='#522814'; ctx.lineWidth=2; ctx.stroke();
-    ctx.beginPath(); ctx.arc(x+s*0.32,y+s*0.12,s*0.16,-Math.PI*0.4,Math.PI*0.4);
-    ctx.strokeStyle='#522814'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle=cupG; ctx.fill(); ctx.strokeStyle='#3E1E0A'; ctx.lineWidth=2; ctx.stroke();
+    // handle
+    ctx.beginPath(); ctx.arc(x+s*0.32,y+s*0.12,s*0.16,-Math.PI*0.45,Math.PI*0.45);
+    ctx.strokeStyle='#5A2E18'; ctx.lineWidth=3.5; ctx.stroke();
+    // inner liquid (dark cocoa)
+    ctx.beginPath(); ctx.ellipse(x,y-s*0.055,s*0.19,s*0.06,0,0,Math.PI*2);
+    ctx.fillStyle='#3E1E0A'; ctx.fill();
+    // liquid surface (warm brown)
+    ctx.beginPath(); ctx.ellipse(x,y-s*0.07,s*0.18,s*0.055,0,0,Math.PI*2);
+    ctx.fillStyle='#6B3318'; ctx.fill();
+    // cup rim inner shadow
     ctx.beginPath(); ctx.ellipse(x,y-s*0.06,s*0.21,s*0.07,0,0,Math.PI*2);
-    ctx.fillStyle='#FFF8F0'; ctx.fill();
-    for (const [dx,dy] of [[-s*0.1,-s*0.06],[s*0.08,-s*0.06],[0,-s*0.03]]) {
-      ctx.beginPath(); ctx.ellipse(x+dx,y+dy,s*0.075,s*0.055,0,0,Math.PI*2);
-      ctx.fillStyle='#FFFAFA'; ctx.fill();
+    ctx.strokeStyle='rgba(30,10,0,0.35)'; ctx.lineWidth=2.5; ctx.stroke();
+    // inner wall left/right shadow strips
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x-s*0.23,y-s*0.06,s*0.46,s*0.5,s*0.07); ctx.clip();
+    ctx.fillStyle='rgba(0,0,0,0.12)';
+    ctx.beginPath(); ctx.roundRect(x-s*0.23,y-s*0.06,s*0.06,s*0.5,0); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(x+s*0.17,y-s*0.06,s*0.06,s*0.5,0); ctx.fill();
+    ctx.restore();
+    // cocoa powder dusting
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(x,y-s*0.065,s*0.18,s*0.055,0,0,Math.PI*2); ctx.clip();
+    ctx.fillStyle='rgba(80,30,5,0.28)';
+    for (const [dx,dy,r] of [
+      [-s*0.06,-s*0.065,s*0.055],[s*0.07,-s*0.055,s*0.04],
+      [s*0.01,-s*0.08,s*0.03],[-s*0.1,-s*0.05,s*0.025],[s*0.12,-s*0.07,s*0.03]
+    ]) {
+      ctx.beginPath(); ctx.ellipse(x+dx,y+dy,r,r*0.6,Math.random()*0.8,0,Math.PI*2); ctx.fill();
     }
-    ctx.lineCap='round'; ctx.beginPath();
-    ctx.moveTo(x,y-s*0.12);
-    ctx.bezierCurveTo(x-s*0.08,y-s*0.3,x+s*0.08,y-s*0.44,x,y-s*0.56);
-    ctx.strokeStyle='rgba(180,130,100,0.38)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.restore();
+    // marshmallows (4 pieces, varying size)
+    const marsh=[[x-s*0.09,y-s*0.1,s*0.072,s*0.048],[x+s*0.07,y-s*0.115,s*0.058,s*0.038],
+                 [x+s*0.01,y-s*0.09,s*0.05,s*0.033],[x-s*0.03,y-s*0.125,s*0.045,s*0.03]];
+    for (const [mx,my,rw,rh] of marsh) {
+      ctx.beginPath(); ctx.ellipse(mx,my,rw,rh,0,0,Math.PI*2);
+      ctx.fillStyle='#FFFAF5'; ctx.fill(); ctx.strokeStyle='rgba(210,185,170,0.5)'; ctx.lineWidth=1; ctx.stroke();
+      // marshmallow top highlight
+      ctx.beginPath(); ctx.ellipse(mx-rw*0.22,my-rh*0.25,rw*0.35,rh*0.28,0,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fill();
+    }
+    // steam lines (3 wavy)
+    ctx.lineCap='round'; ctx.strokeStyle='rgba(200,160,130,0.36)'; ctx.lineWidth=1.8;
+    for (const [dx,flip] of [[-s*0.1,1],[0,-1],[s*0.09,1]]) {
+      ctx.beginPath();
+      ctx.moveTo(x+dx,y-s*0.14);
+      ctx.bezierCurveTo(x+dx+flip*s*0.07,y-s*0.27,x+dx-flip*s*0.07,y-s*0.38,x+dx+flip*s*0.04,y-s*0.5);
+      ctx.stroke();
+    }
+    // cup shine
+    ctx.fillStyle='rgba(255,255,255,0.09)';
+    ctx.beginPath(); ctx.roundRect(x-s*0.19,y-s*0.04,s*0.05,s*0.3,3); ctx.fill();
   }
 
   _drawLollipop(ctx,x,y,s) {
@@ -1073,57 +1115,110 @@ class Food {
     // plate
     ctx.fillStyle='#E0C890'; ctx.strokeStyle='#C0A060'; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.ellipse(x,y+s*0.36,s*0.38,s*0.09,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // pancake body
-    ctx.fillStyle='#D4A840'; ctx.strokeStyle='#B08020'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.34,s*0.28,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // crispy edge
-    ctx.fillStyle='#C49030';
+    // plate shadow under pancake
+    ctx.fillStyle='rgba(140,100,20,0.15)';
+    ctx.beginPath(); ctx.ellipse(x+s*0.02,y+s*0.32,s*0.3,s*0.07,0,0,Math.PI*2); ctx.fill();
+    // pancake base (gradient — center lighter, edge darker golden)
+    const pjG=ctx.createRadialGradient(x-s*0.05,y-s*0.04,s*0.05,x,y+s*0.08,s*0.35);
+    pjG.addColorStop(0,'#E8C040'); pjG.addColorStop(0.65,'#C89820'); pjG.addColorStop(1,'#A07010');
     ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.34,s*0.28,0,0,Math.PI*2);
-    ctx.arc(x,y+s*0.08,s*0.26,0,Math.PI*2,true); ctx.fill();
-    // green onion lines
-    ctx.strokeStyle='#4A9030'; ctx.lineWidth=2.5; ctx.lineCap='round';
-    for (const [dx1,dy1,dx2,dy2] of [
-      [-s*0.28,y+s*0.0,s*0.22,y-s*0.06],[-s*0.2,y+s*0.12,s*0.28,y+s*0.06],
-      [-s*0.24,y-s*0.1,s*0.18,y-s*0.16],[-s*0.14,y+s*0.2,s*0.26,y+s*0.16]
-    ]) {
-      ctx.beginPath(); ctx.moveTo(x+dx1,dy1); ctx.lineTo(x+dx2,dy2); ctx.stroke();
+    ctx.fillStyle=pjG; ctx.fill(); ctx.strokeStyle='#907010'; ctx.lineWidth=1.5; ctx.stroke();
+    // crispy edge ring (darker band)
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.08,s*0.34,s*0.28,0,0,Math.PI*2);
+    ctx.arc(x,y+s*0.08,s*0.25,0,Math.PI*2,true); ctx.fillStyle='rgba(120,72,5,0.32)'; ctx.fill();
+    ctx.restore();
+    // random brown toasted spots
+    const spots=[[-s*0.16,y-s*0.08,s*0.072,s*0.045,0.3],[s*0.14,y+s*0.06,s*0.08,s*0.05,-0.2],
+                 [s*0.0,y+s*0.18,s*0.065,s*0.04,0.1],[-s*0.08,y+s*0.14,s*0.055,s*0.035,-0.4],
+                 [s*0.18,y-s*0.06,s*0.05,s*0.03,0.5],[-s*0.22,y+s*0.1,s*0.04,s*0.025,-0.1]];
+    ctx.fillStyle='rgba(140,82,8,0.3)';
+    for (const [dx,sy,rw,rh,ang] of spots) {
+      ctx.beginPath(); ctx.ellipse(x+dx,sy,rw,rh,ang,0,Math.PI*2); ctx.fill();
     }
-    // surface sheen
-    ctx.fillStyle='rgba(255,230,120,0.22)';
-    ctx.beginPath(); ctx.ellipse(x-s*0.06,y-s*0.04,s*0.16,s*0.1,-0.3,0,Math.PI*2); ctx.fill();
+    // green onion stems (thin, multiple, varying angles)
+    const onions=[
+      [-s*0.26,y+s*0.04,s*0.2,y-s*0.08,1.6],
+      [s*0.16,y+s*0.1,s*0.28,y-s*0.04,1.8],
+      [-s*0.18,y-s*0.1,s*0.24,y-s*0.18,1.4],
+      [-s*0.06,y+s*0.2,s*0.18,y+s*0.08,1.6],
+      [-s*0.3,y+s*0.12,s*0.1,y+s*0.04,1.5],
+      [s*0.04,y-s*0.14,s*0.3,y-s*0.06,1.7],
+    ];
+    for (const [x1,y1,x2,y2,lw] of onions) {
+      ctx.beginPath(); ctx.moveTo(x+x1,y1); ctx.lineTo(x+x2,y2);
+      ctx.strokeStyle='#3A7A22'; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.stroke();
+      // stem node dots
+      ctx.beginPath(); ctx.arc(x+x1+(x+x2-(x+x1))*0.4,(y1+y2)*0.5,lw*0.7,0,Math.PI*2);
+      ctx.fillStyle='#4A8A28'; ctx.fill();
+    }
+    // oil gloss highlight
+    ctx.fillStyle='rgba(255,245,140,0.18)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.08,y-s*0.06,s*0.18,s*0.11,-0.35,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,200,0.12)';
+    ctx.beginPath(); ctx.ellipse(x+s*0.1,y+s*0.12,s*0.1,s*0.065,0.2,0,Math.PI*2); ctx.fill();
   }
 
   _drawSamgyeopsal(ctx,x,y,s) {
-    // grill plate
-    ctx.fillStyle='#484040'; ctx.strokeStyle='#302828'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.38,s*0.1,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#383030';
-    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.3,s*0.07,0,0,Math.PI*2); ctx.fill();
-    // grill lines
-    ctx.strokeStyle='#282020'; ctx.lineWidth=1.5;
-    for (const dx of [-s*0.14,s*0,s*0.14]) {
-      ctx.beginPath(); ctx.moveTo(x+dx,y+s*0.22); ctx.lineTo(x+dx,y+s*0.42); ctx.stroke();
+    // grill plate outer
+    const grillG=ctx.createRadialGradient(x,y+s*0.32,s*0.04,x,y+s*0.32,s*0.4);
+    grillG.addColorStop(0,'#4A4040'); grillG.addColorStop(1,'#2A2020');
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.38,s*0.1,0,0,Math.PI*2);
+    ctx.fillStyle=grillG; ctx.fill(); ctx.strokeStyle='#1A1010'; ctx.lineWidth=2; ctx.stroke();
+    // grill surface (inner)
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.32,s*0.3,s*0.075,0,0,Math.PI*2);
+    ctx.fillStyle='#302828'; ctx.fill();
+    // grill bars (horizontal ridges)
+    ctx.strokeStyle='#1C1414'; ctx.lineWidth=2; ctx.lineCap='round';
+    for (const [ox,oy,len] of [[-s*0.22,y+s*0.26,s*0.44],[-s*0.26,y+s*0.32,s*0.52],[-s*0.22,y+s*0.38,s*0.44]]) {
+      ctx.beginPath(); ctx.moveTo(x+ox,oy); ctx.lineTo(x+ox+len,oy); ctx.stroke();
     }
-    // pork belly slices
-    for (const [dx,dy,rot] of [[-s*0.12,s*0.06,-0.2],[s*0.02,s*0.0,0.1],[s*0.14,s*0.04,0.25]]) {
+    // pork belly slices (3 pieces)
+    for (const [dx,dy,rot] of [[-s*0.15,s*0.04,-0.22],[s*0.0,s*0.0,0.08],[s*0.15,s*0.03,0.28]]) {
       ctx.save(); ctx.translate(x+dx,y+dy); ctx.rotate(rot);
-      // fat layer
-      ctx.fillStyle='#F0DCC8'; ctx.strokeStyle='#D0B8A0'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.1,s*0.24,s*0.22,4); ctx.fill(); ctx.stroke();
-      // meat layer
-      ctx.fillStyle='#CC5030';
-      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.02,s*0.24,s*0.1,2); ctx.fill();
-      // fat stripe
-      ctx.fillStyle='rgba(255,240,220,0.6)';
-      ctx.beginPath(); ctx.roundRect(-s*0.12,-s*0.06,s*0.24,s*0.04,1); ctx.fill();
+      const fw=s*0.12, fh=s*0.22;
+      // outer edge shadow
+      ctx.fillStyle='rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.roundRect(-fw+s*0.008,s*0.005,fw*2,fh,5); ctx.fill();
+      // fat layer (top, creamy white)
+      const fatG=ctx.createLinearGradient(-fw,0,fw,0);
+      fatG.addColorStop(0,'#E8D0BC'); fatG.addColorStop(0.5,'#F8EAD8'); fatG.addColorStop(1,'#DEC8B0');
+      ctx.beginPath(); ctx.roundRect(-fw,0,fw*2,fh*0.38,4);
+      ctx.fillStyle=fatG; ctx.fill();
+      ctx.strokeStyle='#C8B0A0'; ctx.lineWidth=0.8; ctx.stroke();
+      // thin fat stripe in middle
+      ctx.fillStyle='rgba(255,248,235,0.65)';
+      ctx.beginPath(); ctx.roundRect(-fw,fh*0.38,fw*2,fh*0.1,0); ctx.fill();
+      // meat layer (red/brown gradient)
+      const meatG=ctx.createLinearGradient(-fw,0,fw,0);
+      meatG.addColorStop(0,'#B04020'); meatG.addColorStop(0.5,'#D05030'); meatG.addColorStop(1,'#A03018');
+      ctx.beginPath(); ctx.roundRect(-fw,fh*0.48,fw*2,fh*0.52,{bl:4,br:4,tl:0,tr:0});
+      ctx.fillStyle=meatG; ctx.fill();
+      ctx.strokeStyle='#8A2810'; ctx.lineWidth=0.8; ctx.stroke();
+      // grill marks on meat (dark diagonal lines)
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect(-fw,fh*0.48,fw*2,fh*0.52,{bl:4,br:4,tl:0,tr:0}); ctx.clip();
+      ctx.strokeStyle='rgba(50,10,5,0.45)'; ctx.lineWidth=1.4;
+      for (const gx of [-fw*0.5,0,fw*0.5]) {
+        ctx.beginPath(); ctx.moveTo(gx-s*0.02,fh*0.48); ctx.lineTo(gx+s*0.02,fh); ctx.stroke();
+      }
+      ctx.restore();
+      // meat surface highlight
+      ctx.fillStyle='rgba(255,160,100,0.22)';
+      ctx.beginPath(); ctx.ellipse(-fw*0.3,fh*0.65,fw*0.5,fh*0.12,0,0,Math.PI*2); ctx.fill();
+      // fat top highlight
+      ctx.fillStyle='rgba(255,255,245,0.35)';
+      ctx.beginPath(); ctx.ellipse(-fw*0.2,fh*0.12,fw*0.55,fh*0.1,0,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
-    // sizzle smoke
-    ctx.strokeStyle='rgba(180,160,140,0.35)'; ctx.lineWidth=1.5; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x-s*0.08,y-s*0.06);
-    ctx.bezierCurveTo(x-s*0.16,y-s*0.18,x+s*0.0,y-s*0.28,x-s*0.08,y-s*0.38); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+s*0.1,y-s*0.02);
-    ctx.bezierCurveTo(x+s*0.18,y-s*0.14,x+s*0.04,y-s*0.24,x+s*0.1,y-s*0.34); ctx.stroke();
+    // sizzle smoke (3 wisps)
+    ctx.lineCap='round';
+    for (const [dx,flip,op] of [[-s*0.12,1,0.32],[s*0.02,-1,0.28],[s*0.14,1,0.22]]) {
+      ctx.beginPath();
+      ctx.moveTo(x+dx,y-s*0.04);
+      ctx.bezierCurveTo(x+dx+flip*s*0.08,y-s*0.16,x+dx-flip*s*0.06,y-s*0.26,x+dx+flip*s*0.04,y-s*0.36);
+      ctx.strokeStyle=`rgba(190,170,150,${op})`; ctx.lineWidth=1.5; ctx.stroke();
+    }
   }
 }
 
