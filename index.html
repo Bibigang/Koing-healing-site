@@ -1883,12 +1883,31 @@ function _sunsetTree(x,base,h) {
 }
 
 function _bgFlower(x,y,r) {
-  for (let i=0;i<5;i++) {
-    const a=(i/5)*Math.PI*2;
-    ctx.beginPath(); ctx.ellipse(x+Math.cos(a)*r*1.5,y+Math.sin(a)*r*1.5,r,r*0.6,a,0,Math.PI*2);
-    ctx.fillStyle=i%2===0?'#FF99CC':'#FFB3DD'; ctx.fill();
-  }
-  ctx.beginPath(); ctx.arc(x,y,r*0.75,0,Math.PI*2); ctx.fillStyle='#FFEE44'; ctx.fill();
+  // small tulip — clearly distinct from the 6-petal pink foreground flower item
+  // stem
+  ctx.strokeStyle='#4A8828'; ctx.lineWidth=r*0.3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+r*2.6); ctx.stroke();
+  // leaf
+  ctx.beginPath();
+  ctx.moveTo(x,y+r*1.5);
+  ctx.quadraticCurveTo(x+r*1.3,y+r*0.7, x+r*0.9,y+r*0.1);
+  ctx.quadraticCurveTo(x+r*0.45,y+r*0.8, x,y+r*1.5);
+  ctx.fillStyle='#5AAA2C'; ctx.fill();
+  // tulip head (color varies by position)
+  const ci=Math.round((x+y)*0.08)%3;
+  const cols=[['#FF3355','#FF7799'],['#FF6820','#FFAA60'],['#CC22AA','#FF66CC']];
+  ctx.beginPath();
+  ctx.moveTo(x,y-r*1.5);
+  ctx.bezierCurveTo(x-r*0.85,y-r*1.05, x-r*0.8,y-r*0.1, x-r*0.08,y);
+  ctx.lineTo(x+r*0.08,y);
+  ctx.bezierCurveTo(x+r*0.8,y-r*0.1, x+r*0.85,y-r*1.05, x,y-r*1.5);
+  ctx.fillStyle=cols[ci][0]; ctx.fill();
+  // inner highlight
+  ctx.beginPath();
+  ctx.moveTo(x,y-r*1.42);
+  ctx.bezierCurveTo(x-r*0.32,y-r*1.05, x-r*0.28,y-r*0.42, x,y-r*0.32);
+  ctx.bezierCurveTo(x+r*0.28,y-r*0.42, x+r*0.32,y-r*1.05, x,y-r*1.42);
+  ctx.fillStyle=cols[ci][1]; ctx.fill();
 }
 
 function _candyCane(x,y) {
