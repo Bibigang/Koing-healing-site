@@ -2159,9 +2159,12 @@ window.addEventListener('resize',()=>{
   const prev=SCENES[(sceneIdx-1+SCENES.length)%SCENES.length];
   const curr=SCENES[sceneIdx];
   const next=SCENES[(sceneIdx+1)%SCENES.length];
-  if (disp>1)  drawSceneBackground(prev,disp-W);
+  // Fill full canvas first so body background never bleeds through during transitions
+  const baseColor=curr.sky[curr.sky.length-1];
+  ctx.fillStyle=baseColor; ctx.fillRect(0,0,W,H);
+  if (disp>0)  drawSceneBackground(prev,disp-W);
   drawSceneBackground(curr,disp);
-  if (disp<-1) drawSceneBackground(next,disp+W);
+  if (disp<0) drawSceneBackground(next,disp+W);
 
   // Rain overlay (global)
   drawRain();
