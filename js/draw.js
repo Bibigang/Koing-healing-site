@@ -62,7 +62,7 @@ function drawSceneDecorations(scene,ox) {
   const gy=H*scene.groundY;
   if (scene.id==='spring') {
     for (const [rx,ry] of [[0.1,0.64],[0.28,0.66],[0.55,0.63],[0.72,0.65],[0.88,0.62]])
-      _bgFlower(ox+rx*W,ry*H,H*0.022);
+      _bgFlower(ox+rx*W,ry*H,H*0.022,rx*W+ry*H);
   }
   else if (scene.id==='night') {
     ctx.save();
@@ -385,7 +385,7 @@ function drawSceneDecorations(scene,ox) {
 }
 
 
-function _bgFlower(x,y,r) {
+function _bgFlower(x,y,r,seed) {
   // small tulip — clearly distinct from the 6-petal pink foreground flower item
   // stem
   ctx.strokeStyle='#4A8828'; ctx.lineWidth=r*0.3; ctx.lineCap='round';
@@ -397,7 +397,7 @@ function _bgFlower(x,y,r) {
   ctx.quadraticCurveTo(x+r*0.45,y+r*0.8, x,y+r*1.5);
   ctx.fillStyle='#5AAA2C'; ctx.fill();
   // tulip head (color varies by position)
-  const ci=Math.round((x+y)*0.08)%3;
+  const ci=Math.round((seed??x+y)*0.08)%3;
   const cols=[['#FF3355','#FF7799'],['#FF6820','#FFAA60'],['#CC22AA','#FF66CC']];
   ctx.beginPath();
   ctx.moveTo(x,y-r*1.5);
