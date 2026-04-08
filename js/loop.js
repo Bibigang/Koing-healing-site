@@ -66,8 +66,8 @@
   }
 
   starPulse++;
-  if (curtainClose>0&&curtainClose<30) curtainClose++;
-  else if (curtainClose<0) { curtainClose++; if(curtainClose===0) curtainClose=0; }
+  if (curtainClose<curtainTarget) curtainClose=Math.min(30,curtainClose+1);
+  else if (curtainClose>curtainTarget) curtainClose=Math.max(0,curtainClose-1);
 
   // Lightning flash overlay
   if (lightningFlash>0) {

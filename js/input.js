@@ -45,13 +45,12 @@ function handleSceneInteraction(x,y) {
   } else if (sid==='cozy') {
     const gy=H*0.6;
     const wx=W*0.68, wy=H*0.08, ww=W*0.22, wh=H*0.28;
-    // curtain tap (left or right of window, within curtain height)
+    // curtain tap (left or right of window, within curtain height) → toggle open/close
     if (y>wy-H*0.02&&y<wy+wh+H*0.04) {
-      if (x>wx-ww*0.55&&x<wx+ww*0.06) { // left curtain area
-        curtainClose=curtainClose>=28?-1:(curtainClose<=0?1:curtainClose); return true;
-      }
-      if (x>wx+ww*0.94&&x<wx+ww*1.55) { // right curtain area
-        curtainClose=curtainClose>=28?-1:(curtainClose<=0?1:curtainClose); return true;
+      const onLeft=x>wx-ww*0.6&&x<wx+ww*0.1;
+      const onRight=x>wx+ww*0.9&&x<wx+ww*1.6;
+      if (onLeft||onRight) {
+        curtainTarget=curtainTarget===0?30:0; return true;
       }
     }
     // sofa: sx=W*0.04, sy=gy-H*0.2, sw=W*0.28, sh=H*0.17
@@ -71,7 +70,7 @@ function handleSceneInteraction(x,y) {
 
 function onSceneExit(idx) {
   if (SCENES[idx].id==='rainy') { rainTimer=0; rainDrops=[]; }
-  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[]; sofaBounce=0; laptopGlow=0; curtainClose=0; tulipBloom=0; fallingPetals=[];
+  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[]; sofaBounce=0; laptopGlow=0; curtainClose=0; curtainTarget=0; tulipBloom=0; fallingPetals=[];
 }
 
 function onSceneEnter(idx) {

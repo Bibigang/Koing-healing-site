@@ -135,8 +135,8 @@ function drawSceneDecorations(scene,ox) {
     ctx.beginPath(); ctx.arc(wx+ww+ww*0.15,wy-H*0.008,H*0.009,0,Math.PI*2); ctx.fill();
 
     // curtain close progress (0=open, 1=closed)
-    const cp=curtainClose>0?Math.min(1,curtainClose/28):curtainClose<0?Math.max(0,1+curtainClose/28):0;
-    const cSlide=cp*ww*0.52; // how far each curtain slides inward
+    const cp=curtainClose/30;
+    const cSlide=cp*ww*0.58; // slides inward to fully cover window
     const tieY=wy+wh*0.45;   // tie knot height
     const cCol='rgba(175,112,128,0.88)', cShad='rgba(130,75,90,0.6)', cHi='rgba(220,165,180,0.5)';
 
