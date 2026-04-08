@@ -464,48 +464,42 @@ class Food {
   }
 
   _drawTteokbokki(ctx,x,y,s) {
-    // skewer stick
-    ctx.strokeStyle='#C8A060'; ctx.lineWidth=s*0.04; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x,y+s*0.55); ctx.lineTo(x,y-s*0.5); ctx.stroke();
-    // stick tip
-    ctx.fillStyle='#C8A060';
-    ctx.beginPath(); ctx.moveTo(x,y-s*0.5); ctx.lineTo(x-s*0.03,y-s*0.42); ctx.lineTo(x+s*0.03,y-s*0.42); ctx.closePath(); ctx.fill();
-    // 4 tteok pieces from bottom to top
-    const tH=s*0.2, tW=s*0.16, gap=s*0.02;
-    const startY=y+s*0.36;
+    // skewer stick (longer, pokes out top and bottom)
+    ctx.strokeStyle='#B8924A'; ctx.lineWidth=s*0.045; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.58); ctx.lineTo(x,y-s*0.56); ctx.stroke();
+    // stick pointed tip
+    ctx.fillStyle='#B8924A';
+    ctx.beginPath(); ctx.moveTo(x,y-s*0.56); ctx.lineTo(x-s*0.025,y-s*0.46); ctx.lineTo(x+s*0.025,y-s*0.46); ctx.closePath(); ctx.fill();
+
+    // 4 round cylindrical tteok pieces stacked vertically
+    const tw=s*0.2, th=s*0.18, gap=s*0.03, ry=s*0.07;
+    const startY=y+s*0.34;
     for (let i=0;i<4;i++) {
-      const ty=startY-i*(tH+gap);
-      // sauce coat (slightly wider, red)
-      ctx.fillStyle='#D83000'; ctx.strokeStyle='#A82000'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.ellipse(x,ty,tW+s*0.01,s*0.055,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      // tteok side (white tube)
-      ctx.fillStyle='#FFF4E8'; ctx.strokeStyle='#E8DCC8'; ctx.lineWidth=1;
-      ctx.beginPath();
-      ctx.moveTo(x-(tW),ty);
-      ctx.lineTo(x-(tW),ty-tH);
-      ctx.lineTo(x+(tW),ty-tH);
-      ctx.lineTo(x+(tW),ty);
-      ctx.closePath(); ctx.fill(); ctx.stroke();
-      // sauce on side
-      ctx.fillStyle='rgba(210,50,0,0.55)';
-      ctx.beginPath();
-      ctx.moveTo(x-tW,ty-tH*0.1); ctx.lineTo(x-tW,ty-tH*0.5);
-      ctx.lineTo(x+tW,ty-tH*0.5); ctx.lineTo(x+tW,ty-tH*0.1);
-      ctx.closePath(); ctx.fill();
-      // tteok top ellipse
-      ctx.fillStyle='#FFF4E8'; ctx.strokeStyle='#E0D0C0'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.ellipse(x,ty-tH,tW,s*0.055,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      // sauce gloss on top
-      ctx.fillStyle='rgba(240,60,10,0.7)';
-      ctx.beginPath(); ctx.ellipse(x,ty-tH,tW,s*0.055,0,0,Math.PI*2); ctx.fill();
-      // highlight
-      ctx.fillStyle='rgba(255,160,100,0.4)';
-      ctx.beginPath(); ctx.ellipse(x-tW*0.3,ty-tH-s*0.01,tW*0.35,s*0.025,0,0,Math.PI*2); ctx.fill();
+      const cy=startY-i*(th+gap);
+      // tteok body — rounded rect (pill shape = clearly cylindrical rice cake)
+      ctx.fillStyle='#FFEEDD'; ctx.strokeStyle='#DDC8A8'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.roundRect(x-tw,cy-th,tw*2,th,[ry,ry,ry,ry]); ctx.fill(); ctx.stroke();
+      // red sauce coat over body
+      ctx.fillStyle='rgba(220,35,0,0.72)';
+      ctx.beginPath(); ctx.roundRect(x-tw,cy-th,tw*2,th,[ry,ry,ry,ry]); ctx.fill();
+      // white tteok peek-through center stripe (shows it's rice cake inside)
+      ctx.fillStyle='rgba(255,245,235,0.55)';
+      ctx.beginPath(); ctx.roundRect(x-tw*0.5,cy-th+th*0.25,tw,th*0.5,3); ctx.fill();
+      // sauce gloss highlight
+      ctx.fillStyle='rgba(255,120,60,0.35)';
+      ctx.beginPath(); ctx.ellipse(x-tw*0.25,cy-th+th*0.28,tw*0.45,th*0.18,0,0,Math.PI*2); ctx.fill();
+      // bottom rim ellipse (cylindrical depth)
+      ctx.fillStyle='rgba(180,20,0,0.5)';
+      ctx.beginPath(); ctx.ellipse(x,cy,tw,ry*0.55,0,0,Math.PI*2); ctx.fill();
+      // top rim ellipse
+      ctx.fillStyle='rgba(255,200,160,0.45)';
+      ctx.beginPath(); ctx.ellipse(x,cy-th,tw,ry*0.55,0,0,Math.PI*2); ctx.fill();
     }
-    // sauce drip
-    ctx.fillStyle='rgba(200,30,0,0.6)';
-    ctx.beginPath(); ctx.moveTo(x+tW*0.6,startY-tH);
-    ctx.quadraticCurveTo(x+tW*0.7,startY-tH+s*0.05,x+tW*0.55,startY-tH+s*0.08);
+    // sauce drip off bottom piece
+    ctx.fillStyle='rgba(200,25,0,0.65)';
+    ctx.beginPath();
+    ctx.moveTo(x+tw*0.5,startY-th*0.5);
+    ctx.quadraticCurveTo(x+tw*0.65,startY-th*0.2,x+tw*0.45,startY+th*0.1);
     ctx.closePath(); ctx.fill();
   }
 
