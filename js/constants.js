@@ -36,7 +36,7 @@ const NIGHT_STARS=[[0.1,0.08],[0.25,0.04],[0.4,0.12],[0.55,0.05],[0.7,0.1],
                    [0.75,0.28],[0.05,0.33],[0.48,0.08],[0.92,0.3],[0.62,0.35]];
 const LIGHTNING={rx:0.55,ry:0.18};
 // Puddles: rx,ry = center (relative), rw,rh = half-axes (relative) — small/large/medium
-const PUDDLES=[{rx:0.2,ry:0.63,rw:0.032,rh:0.009},{rx:0.55,ry:0.65,rw:0.072,rh:0.018},{rx:0.78,ry:0.62,rw:0.05,rh:0.013}];
+const PUDDLES=[{rx:0.2,ry:0.63,rw:0.072,rh:0.020},{rx:0.55,ry:0.65,rw:0.162,rh:0.041},{rx:0.78,ry:0.62,rw:0.113,rh:0.029}];
 
 // ── Scene state ───────────────────────────────────────────
 let sceneIdx=0;
