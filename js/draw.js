@@ -473,18 +473,18 @@ function _bgFlower(x,y,r,seed,bloom=0,idx=-1) {
     const t=bloom;
     const col0=cols[ci][0], col1=cols[ci][1];
 
-    // back center petal — widens as it opens
+    // back center petal — fans wide open as bloom increases
     ctx.beginPath();
-    ctx.moveTo(x, y-r*(1.5+0.35*t));
-    ctx.bezierCurveTo(x-r*(0.85+0.4*t), y-r*1.05, x-r*(0.8+0.45*t), y-r*0.1, x-r*(0.08+0.18*t), y);
-    ctx.lineTo(x+r*(0.08+0.18*t), y);
-    ctx.bezierCurveTo(x+r*(0.8+0.45*t), y-r*0.1, x+r*(0.85+0.4*t), y-r*1.05, x, y-r*(1.5+0.35*t));
+    ctx.moveTo(x, y-r*(1.5+0.5*t));
+    ctx.bezierCurveTo(x-r*(0.85+0.9*t), y-r*(1.1-0.1*t), x-r*(0.8+0.9*t), y-r*0.1, x-r*(0.08+0.22*t), y);
+    ctx.lineTo(x+r*(0.08+0.22*t), y);
+    ctx.bezierCurveTo(x+r*(0.8+0.9*t), y-r*0.1, x+r*(0.85+0.9*t), y-r*(1.1-0.1*t), x, y-r*(1.5+0.5*t));
     ctx.fillStyle=col0; ctx.fill();
     // inner highlight on back petal
     ctx.beginPath();
-    ctx.moveTo(x, y-r*(1.42+0.3*t));
-    ctx.bezierCurveTo(x-r*(0.32+0.1*t), y-r*1.05, x-r*(0.28+0.1*t), y-r*0.42, x, y-r*0.32);
-    ctx.bezierCurveTo(x+r*(0.28+0.1*t), y-r*0.42, x+r*(0.32+0.1*t), y-r*1.05, x, y-r*(1.42+0.3*t));
+    ctx.moveTo(x, y-r*(1.42+0.4*t));
+    ctx.bezierCurveTo(x-r*(0.32+0.4*t), y-r*1.05, x-r*(0.28+0.3*t), y-r*0.42, x, y-r*0.32);
+    ctx.bezierCurveTo(x+r*(0.28+0.3*t), y-r*0.42, x+r*(0.32+0.4*t), y-r*1.05, x, y-r*(1.42+0.4*t));
     ctx.fillStyle=col1; ctx.fill();
 
     // left outer petal — fans outward to the left
