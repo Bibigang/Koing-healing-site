@@ -136,84 +136,84 @@ function drawSceneDecorations(scene,ox) {
 
     // curtain close progress (0=open, 1=closed)
     const cp=curtainClose/30;
-    const cSlide=cp*ww*0.58; // slides inward to fully cover window
-    const tieY=wy+wh*0.45;   // tie knot height
-    const cCol='rgba(175,112,128,0.88)', cShad='rgba(130,75,90,0.6)', cHi='rgba(220,165,180,0.5)';
+    const cy0=wy-H*0.014, cbot=wy+wh+H*0.05;
+    const tieY=wy+wh*0.45;
+    const cCol='rgba(175,112,128,0.92)', cShad='rgba(130,75,90,0.6)', cHi='rgba(220,165,180,0.55)';
+    const knotAlpha=Math.max(0,1-cp*3); // knot fades quickly as curtain closes
 
     // ── left curtain ──
-    { const lx=wx-ww*0.12+cSlide; // outer left edge (slides right when closing)
-      const rx=wx+ww*0.04+cSlide; // inner right edge (at window left, slides right)
-      const cy0=wy-H*0.014, cbot=wy+wh+H*0.05;
+    // outer anchor: left of rod (fixed). inner edge: slides RIGHT to cover window fully
+    { const anchor=wx-ww*0.15;
+      const innerOpen=wx+ww*0.04;       // inner edge when open (just inside window left)
+      const innerClosed=wx+ww+ww*0.05;  // inner edge when closed (past window right edge)
+      const inner=innerOpen+(innerClosed-innerOpen)*cp;
+
       ctx.fillStyle=cCol;
-      // upper half: fans from rod down to tie
+      // main panel body
       ctx.beginPath();
-      ctx.moveTo(lx,cy0);
-      ctx.bezierCurveTo(lx-ww*0.12,cy0+wh*0.2, lx-ww*0.08,tieY-wh*0.1, lx+ww*0.06,tieY);
-      ctx.lineTo(rx,tieY);
-      ctx.bezierCurveTo(rx,tieY-wh*0.15, rx-ww*0.04,cy0+wh*0.05, rx,cy0);
+      ctx.moveTo(anchor,cy0);
+      ctx.bezierCurveTo(anchor-ww*0.08*(1-cp),cy0+wh*0.25, anchor-ww*0.1*(1-cp),tieY-wh*0.08, anchor,tieY);
+      ctx.bezierCurveTo(anchor-ww*0.1*(1-cp),tieY+wh*0.1, anchor-ww*0.08*(1-cp),cbot-wh*0.12, anchor,cbot);
+      ctx.lineTo(inner,cbot);
+      ctx.bezierCurveTo(inner+ww*0.04*(1-cp),cbot-wh*0.1, inner+ww*0.02*(1-cp),cy0+wh*0.15, inner,cy0);
       ctx.closePath(); ctx.fill();
-      // lower half: falls from tie to bottom, wider
-      ctx.beginPath();
-      ctx.moveTo(lx+ww*0.06,tieY);
-      ctx.bezierCurveTo(lx-ww*0.1,tieY+wh*0.15, lx-ww*0.14,cbot-wh*0.1, lx-ww*0.04,cbot);
-      ctx.lineTo(rx+ww*0.04,cbot);
-      ctx.bezierCurveTo(rx,cbot-wh*0.05, rx,tieY+wh*0.05, rx,tieY);
-      ctx.closePath(); ctx.fill();
-      // fold highlight upper
+      // fold highlight
       ctx.strokeStyle=cHi; ctx.lineWidth=2; ctx.lineCap='round';
       ctx.beginPath();
-      ctx.moveTo(lx-ww*0.02,cy0+wh*0.05);
-      ctx.bezierCurveTo(lx-ww*0.08,cy0+wh*0.2, lx-ww*0.02,tieY-wh*0.12, lx+ww*0.01,tieY-wh*0.02);
+      ctx.moveTo(anchor+(inner-anchor)*0.3,cy0+wh*0.04);
+      ctx.bezierCurveTo(anchor+(inner-anchor)*0.28,cy0+wh*0.35, anchor+(inner-anchor)*0.3,cy0+wh*0.65, anchor+(inner-anchor)*0.26,cbot-wh*0.04);
       ctx.stroke();
-      // fold shadow lower
+      // fold shadow
       ctx.strokeStyle=cShad; ctx.lineWidth=1.5;
       ctx.beginPath();
-      ctx.moveTo(lx+ww*0.02,tieY+wh*0.05);
-      ctx.bezierCurveTo(lx-ww*0.06,tieY+wh*0.25, lx-ww*0.08,cbot-wh*0.12, lx-ww*0.02,cbot-wh*0.02);
+      ctx.moveTo(anchor+(inner-anchor)*0.6,cy0+wh*0.08);
+      ctx.bezierCurveTo(anchor+(inner-anchor)*0.58,cy0+wh*0.4, anchor+(inner-anchor)*0.6,cy0+wh*0.7, anchor+(inner-anchor)*0.56,cbot-wh*0.06);
       ctx.stroke();
-      // tie knot (small rounded band)
-      ctx.fillStyle='rgba(140,80,100,0.9)';
-      ctx.beginPath(); ctx.ellipse(lx+ww*0.1,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(200,140,155,0.6)';
-      ctx.beginPath(); ctx.ellipse(lx+ww*0.1,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
+      // tie knot (fades as closes)
+      if (knotAlpha>0) {
+        ctx.save(); ctx.globalAlpha=knotAlpha;
+        const kx=anchor+(inner-anchor)*0.78;
+        ctx.fillStyle='rgba(140,80,100,0.9)';
+        ctx.beginPath(); ctx.ellipse(kx,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(200,140,155,0.6)';
+        ctx.beginPath(); ctx.ellipse(kx,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
     }
 
-    // ── right curtain ──
-    { const rx=wx+ww+ww*0.12-cSlide; // outer right edge (slides left when closing)
-      const lx=wx+ww-ww*0.04-cSlide; // inner left edge
-      const cy0=wy-H*0.014, cbot=wy+wh+H*0.05;
+    // ── right curtain (mirror) ──
+    { const anchor=wx+ww+ww*0.15;
+      const innerOpen=wx+ww-ww*0.04;    // inner edge when open
+      const innerClosed=wx-ww*0.05;     // inner edge when closed (past window left edge)
+      const inner=innerOpen+(innerClosed-innerOpen)*cp;
+
       ctx.fillStyle=cCol;
-      // upper half
       ctx.beginPath();
-      ctx.moveTo(rx,cy0);
-      ctx.bezierCurveTo(rx+ww*0.12,cy0+wh*0.2, rx+ww*0.08,tieY-wh*0.1, rx-ww*0.06,tieY);
-      ctx.lineTo(lx,tieY);
-      ctx.bezierCurveTo(lx,tieY-wh*0.15, lx+ww*0.04,cy0+wh*0.05, lx,cy0);
+      ctx.moveTo(anchor,cy0);
+      ctx.bezierCurveTo(anchor+ww*0.08*(1-cp),cy0+wh*0.25, anchor+ww*0.1*(1-cp),tieY-wh*0.08, anchor,tieY);
+      ctx.bezierCurveTo(anchor+ww*0.1*(1-cp),tieY+wh*0.1, anchor+ww*0.08*(1-cp),cbot-wh*0.12, anchor,cbot);
+      ctx.lineTo(inner,cbot);
+      ctx.bezierCurveTo(inner-ww*0.04*(1-cp),cbot-wh*0.1, inner-ww*0.02*(1-cp),cy0+wh*0.15, inner,cy0);
       ctx.closePath(); ctx.fill();
-      // lower half
-      ctx.beginPath();
-      ctx.moveTo(rx-ww*0.06,tieY);
-      ctx.bezierCurveTo(rx+ww*0.1,tieY+wh*0.15, rx+ww*0.14,cbot-wh*0.1, rx+ww*0.04,cbot);
-      ctx.lineTo(lx-ww*0.04,cbot);
-      ctx.bezierCurveTo(lx,cbot-wh*0.05, lx,tieY+wh*0.05, lx,tieY);
-      ctx.closePath(); ctx.fill();
-      // fold highlight upper
       ctx.strokeStyle=cHi; ctx.lineWidth=2; ctx.lineCap='round';
       ctx.beginPath();
-      ctx.moveTo(rx+ww*0.02,cy0+wh*0.05);
-      ctx.bezierCurveTo(rx+ww*0.08,cy0+wh*0.2, rx+ww*0.02,tieY-wh*0.12, rx-ww*0.01,tieY-wh*0.02);
+      ctx.moveTo(anchor-(anchor-inner)*0.3,cy0+wh*0.04);
+      ctx.bezierCurveTo(anchor-(anchor-inner)*0.28,cy0+wh*0.35, anchor-(anchor-inner)*0.3,cy0+wh*0.65, anchor-(anchor-inner)*0.26,cbot-wh*0.04);
       ctx.stroke();
-      // fold shadow lower
       ctx.strokeStyle=cShad; ctx.lineWidth=1.5;
       ctx.beginPath();
-      ctx.moveTo(rx-ww*0.02,tieY+wh*0.05);
-      ctx.bezierCurveTo(rx+ww*0.06,tieY+wh*0.25, rx+ww*0.08,cbot-wh*0.12, rx+ww*0.02,cbot-wh*0.02);
+      ctx.moveTo(anchor-(anchor-inner)*0.6,cy0+wh*0.08);
+      ctx.bezierCurveTo(anchor-(anchor-inner)*0.58,cy0+wh*0.4, anchor-(anchor-inner)*0.6,cy0+wh*0.7, anchor-(anchor-inner)*0.56,cbot-wh*0.06);
       ctx.stroke();
-      // tie knot
-      ctx.fillStyle='rgba(140,80,100,0.9)';
-      ctx.beginPath(); ctx.ellipse(rx-ww*0.1,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(200,140,155,0.6)';
-      ctx.beginPath(); ctx.ellipse(rx-ww*0.1,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
+      if (knotAlpha>0) {
+        ctx.save(); ctx.globalAlpha=knotAlpha;
+        const kx=anchor-(anchor-inner)*0.78;
+        ctx.fillStyle='rgba(140,80,100,0.9)';
+        ctx.beginPath(); ctx.ellipse(kx,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(200,140,155,0.6)';
+        ctx.beginPath(); ctx.ellipse(kx,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
     }
     ctx.save(); ctx.globalAlpha=0.68;
     ctx.beginPath(); ctx.ellipse(ox+W*0.5,gy+H*0.04,W*0.26,H*0.05,0,0,Math.PI*2);
