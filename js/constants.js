@@ -47,6 +47,7 @@ let moonWink=0;        // >0: moon is winking (counts down)
 let ripples=[];        // [{x,y,t}] water ripple effects
 let sofaBounce=0;      // >0: sofa cushion bouncing (counts down)
 let laptopGlow=0;      // >0: laptop screen lit up (counts down)
+let curtainClose=0;    // 0=open, 1~30=closing anim, 30=closed, -1~-30=opening anim
 
 // ── Panel scroll ──────────────────────────────────────────
 let panelScroll=0, panelMaxScroll=0;

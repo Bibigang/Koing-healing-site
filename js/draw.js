@@ -128,36 +128,91 @@ function drawSceneDecorations(scene,ox) {
     ctx.strokeStyle='#C4A880'; ctx.lineWidth=5; ctx.strokeRect(wx,wy,ww,wh);
     // curtain rod
     ctx.strokeStyle='#A08060'; ctx.lineWidth=4;
-    ctx.beginPath(); ctx.moveTo(wx-ww*0.1,wy-H*0.008); ctx.lineTo(wx+ww+ww*0.1,wy-H*0.008); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wx-ww*0.15,wy-H*0.008); ctx.lineTo(wx+ww+ww*0.15,wy-H*0.008); ctx.stroke();
     ctx.fillStyle='#A08060';
-    ctx.beginPath(); ctx.arc(wx-ww*0.1,wy-H*0.008,H*0.008,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(wx+ww+ww*0.1,wy-H*0.008,H*0.008,0,Math.PI*2); ctx.fill();
-    // left curtain panel with folds
-    { const cx0=wx-ww*0.08, cy0=wy-H*0.012, cpw=ww*0.38, cph=wh+H*0.035;
-      ctx.fillStyle='rgba(170,115,130,0.82)';
+    ctx.beginPath(); ctx.arc(wx-ww*0.15,wy-H*0.008,H*0.009,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(wx+ww+ww*0.15,wy-H*0.008,H*0.009,0,Math.PI*2); ctx.fill();
+
+    // curtain close progress (0=open, 1=closed)
+    const cp=curtainClose>0?Math.min(1,curtainClose/28):curtainClose<0?Math.max(0,1+curtainClose/28):0;
+    const cSlide=cp*ww*0.52; // how far each curtain slides inward
+    const tieY=wy+wh*0.45;   // tie knot height
+    const cCol='rgba(175,112,128,0.88)', cShad='rgba(130,75,90,0.6)', cHi='rgba(220,165,180,0.5)';
+
+    // ── left curtain ──
+    { const lx=wx-ww*0.12+cSlide; // outer left edge (slides right when closing)
+      const rx=wx+ww*0.04+cSlide; // inner right edge (at window left, slides right)
+      const cy0=wy-H*0.014, cbot=wy+wh+H*0.05;
+      ctx.fillStyle=cCol;
+      // upper half: fans from rod down to tie
       ctx.beginPath();
-      ctx.moveTo(cx0,cy0);
-      ctx.bezierCurveTo(cx0+cpw*0.55,cy0+cph*0.15, cx0+cpw*0.3,cy0+cph*0.45, cx0+cpw*0.45,cy0+cph);
-      ctx.lineTo(cx0,cy0+cph); ctx.closePath(); ctx.fill();
-      // fold highlight
-      ctx.strokeStyle='rgba(210,160,175,0.55)'; ctx.lineWidth=1.5;
+      ctx.moveTo(lx,cy0);
+      ctx.bezierCurveTo(lx-ww*0.12,cy0+wh*0.2, lx-ww*0.08,tieY-wh*0.1, lx+ww*0.06,tieY);
+      ctx.lineTo(rx,tieY);
+      ctx.bezierCurveTo(rx,tieY-wh*0.15, rx-ww*0.04,cy0+wh*0.05, rx,cy0);
+      ctx.closePath(); ctx.fill();
+      // lower half: falls from tie to bottom, wider
       ctx.beginPath();
-      ctx.moveTo(cx0+cpw*0.14,cy0+cph*0.08);
-      ctx.bezierCurveTo(cx0+cpw*0.3,cy0+cph*0.25, cx0+cpw*0.18,cy0+cph*0.55, cx0+cpw*0.28,cy0+cph*0.88);
+      ctx.moveTo(lx+ww*0.06,tieY);
+      ctx.bezierCurveTo(lx-ww*0.1,tieY+wh*0.15, lx-ww*0.14,cbot-wh*0.1, lx-ww*0.04,cbot);
+      ctx.lineTo(rx+ww*0.04,cbot);
+      ctx.bezierCurveTo(rx,cbot-wh*0.05, rx,tieY+wh*0.05, rx,tieY);
+      ctx.closePath(); ctx.fill();
+      // fold highlight upper
+      ctx.strokeStyle=cHi; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(lx-ww*0.02,cy0+wh*0.05);
+      ctx.bezierCurveTo(lx-ww*0.08,cy0+wh*0.2, lx-ww*0.02,tieY-wh*0.12, lx+ww*0.01,tieY-wh*0.02);
       ctx.stroke();
+      // fold shadow lower
+      ctx.strokeStyle=cShad; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(lx+ww*0.02,tieY+wh*0.05);
+      ctx.bezierCurveTo(lx-ww*0.06,tieY+wh*0.25, lx-ww*0.08,cbot-wh*0.12, lx-ww*0.02,cbot-wh*0.02);
+      ctx.stroke();
+      // tie knot (small rounded band)
+      ctx.fillStyle='rgba(140,80,100,0.9)';
+      ctx.beginPath(); ctx.ellipse(lx+ww*0.1,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(200,140,155,0.6)';
+      ctx.beginPath(); ctx.ellipse(lx+ww*0.1,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
     }
-    // right curtain panel with folds
-    { const cx0=wx+ww+ww*0.08, cy0=wy-H*0.012, cpw=ww*0.38, cph=wh+H*0.035;
-      ctx.fillStyle='rgba(170,115,130,0.82)';
+
+    // ── right curtain ──
+    { const rx=wx+ww+ww*0.12-cSlide; // outer right edge (slides left when closing)
+      const lx=wx+ww-ww*0.04-cSlide; // inner left edge
+      const cy0=wy-H*0.014, cbot=wy+wh+H*0.05;
+      ctx.fillStyle=cCol;
+      // upper half
       ctx.beginPath();
-      ctx.moveTo(cx0,cy0);
-      ctx.bezierCurveTo(cx0-cpw*0.55,cy0+cph*0.15, cx0-cpw*0.3,cy0+cph*0.45, cx0-cpw*0.45,cy0+cph);
-      ctx.lineTo(cx0,cy0+cph); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle='rgba(210,160,175,0.55)'; ctx.lineWidth=1.5;
+      ctx.moveTo(rx,cy0);
+      ctx.bezierCurveTo(rx+ww*0.12,cy0+wh*0.2, rx+ww*0.08,tieY-wh*0.1, rx-ww*0.06,tieY);
+      ctx.lineTo(lx,tieY);
+      ctx.bezierCurveTo(lx,tieY-wh*0.15, lx+ww*0.04,cy0+wh*0.05, lx,cy0);
+      ctx.closePath(); ctx.fill();
+      // lower half
       ctx.beginPath();
-      ctx.moveTo(cx0-cpw*0.14,cy0+cph*0.08);
-      ctx.bezierCurveTo(cx0-cpw*0.3,cy0+cph*0.25, cx0-cpw*0.18,cy0+cph*0.55, cx0-cpw*0.28,cy0+cph*0.88);
+      ctx.moveTo(rx-ww*0.06,tieY);
+      ctx.bezierCurveTo(rx+ww*0.1,tieY+wh*0.15, rx+ww*0.14,cbot-wh*0.1, rx+ww*0.04,cbot);
+      ctx.lineTo(lx-ww*0.04,cbot);
+      ctx.bezierCurveTo(lx,cbot-wh*0.05, lx,tieY+wh*0.05, lx,tieY);
+      ctx.closePath(); ctx.fill();
+      // fold highlight upper
+      ctx.strokeStyle=cHi; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath();
+      ctx.moveTo(rx+ww*0.02,cy0+wh*0.05);
+      ctx.bezierCurveTo(rx+ww*0.08,cy0+wh*0.2, rx+ww*0.02,tieY-wh*0.12, rx-ww*0.01,tieY-wh*0.02);
       ctx.stroke();
+      // fold shadow lower
+      ctx.strokeStyle=cShad; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(rx-ww*0.02,tieY+wh*0.05);
+      ctx.bezierCurveTo(rx+ww*0.06,tieY+wh*0.25, rx+ww*0.08,cbot-wh*0.12, rx+ww*0.02,cbot-wh*0.02);
+      ctx.stroke();
+      // tie knot
+      ctx.fillStyle='rgba(140,80,100,0.9)';
+      ctx.beginPath(); ctx.ellipse(rx-ww*0.1,tieY,ww*0.07,H*0.018,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(200,140,155,0.6)';
+      ctx.beginPath(); ctx.ellipse(rx-ww*0.1,tieY,ww*0.04,H*0.009,0,0,Math.PI*2); ctx.fill();
     }
     ctx.save(); ctx.globalAlpha=0.68;
     ctx.beginPath(); ctx.ellipse(ox+W*0.5,gy+H*0.04,W*0.26,H*0.05,0,0,Math.PI*2);
