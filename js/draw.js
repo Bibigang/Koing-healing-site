@@ -61,8 +61,9 @@ function drawSceneBackground(scene,ox) {
 function drawSceneDecorations(scene,ox) {
   const gy=H*scene.groundY;
   if (scene.id==='spring') {
-    for (const [rx,ry] of [[0.1,0.64],[0.28,0.66],[0.55,0.63],[0.72,0.65],[0.88,0.62]])
-      _bgFlower(ox+rx*W,ry*H,H*0.022,rx*W+ry*H);
+    const bBloom=tulipBloom>=60?1:tulipBloom/60;
+  for (const [rx,ry] of SPRING_FLOWERS)
+    _bgFlower(ox+rx*W,ry*H,H*0.022,rx*W+ry*H,bBloom);
   }
   else if (scene.id==='night') {
     ctx.save();
@@ -440,8 +441,7 @@ function drawSceneDecorations(scene,ox) {
 }
 
 
-function _bgFlower(x,y,r,seed) {
-  // small tulip — clearly distinct from the 6-petal pink foreground flower item
+function _bgFlower(x,y,r,seed,bloom=0) {
   // stem
   ctx.strokeStyle='#4A8828'; ctx.lineWidth=r*0.3; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+r*2.6); ctx.stroke();
@@ -451,21 +451,56 @@ function _bgFlower(x,y,r,seed) {
   ctx.quadraticCurveTo(x+r*1.3,y+r*0.7, x+r*0.9,y+r*0.1);
   ctx.quadraticCurveTo(x+r*0.45,y+r*0.8, x,y+r*1.5);
   ctx.fillStyle='#5AAA2C'; ctx.fill();
-  // tulip head (color varies by position)
+
   const ci=Math.round((seed??x+y)*0.08)%3;
   const cols=[['#FF3355','#FF7799'],['#FF6820','#FFAA60'],['#CC22AA','#FF66CC']];
-  ctx.beginPath();
-  ctx.moveTo(x,y-r*1.5);
-  ctx.bezierCurveTo(x-r*0.85,y-r*1.05, x-r*0.8,y-r*0.1, x-r*0.08,y);
-  ctx.lineTo(x+r*0.08,y);
-  ctx.bezierCurveTo(x+r*0.8,y-r*0.1, x+r*0.85,y-r*1.05, x,y-r*1.5);
-  ctx.fillStyle=cols[ci][0]; ctx.fill();
-  // inner highlight
-  ctx.beginPath();
-  ctx.moveTo(x,y-r*1.42);
-  ctx.bezierCurveTo(x-r*0.32,y-r*1.05, x-r*0.28,y-r*0.42, x,y-r*0.32);
-  ctx.bezierCurveTo(x+r*0.28,y-r*0.42, x+r*0.32,y-r*1.05, x,y-r*1.42);
-  ctx.fillStyle=cols[ci][1]; ctx.fill();
+
+  if (bloom<0.05) {
+    // closed bud
+    ctx.beginPath();
+    ctx.moveTo(x,y-r*1.5);
+    ctx.bezierCurveTo(x-r*0.85,y-r*1.05, x-r*0.8,y-r*0.1, x-r*0.08,y);
+    ctx.lineTo(x+r*0.08,y);
+    ctx.bezierCurveTo(x+r*0.8,y-r*0.1, x+r*0.85,y-r*1.05, x,y-r*1.5);
+    ctx.fillStyle=cols[ci][0]; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x,y-r*1.42);
+    ctx.bezierCurveTo(x-r*0.32,y-r*1.05, x-r*0.28,y-r*0.42, x,y-r*0.32);
+    ctx.bezierCurveTo(x+r*0.28,y-r*0.42, x+r*0.32,y-r*1.05, x,y-r*1.42);
+    ctx.fillStyle=cols[ci][1]; ctx.fill();
+  } else {
+    // blooming → fully open: 6 petals spread outward
+    const fc=x, fy=y-r*0.9;           // flower center
+    const spread=r*(1.2+0.8*bloom);   // petal reach grows with bloom
+    const petalRx=r*(0.38+0.22*bloom), petalRy=r*(0.78+0.3*bloom);
+    for (let i=0;i<6;i++) {
+      const a=(i/6)*Math.PI*2-Math.PI/2;
+      ctx.save();
+      ctx.translate(fc+Math.cos(a)*spread*0.55, fy+Math.sin(a)*spread*0.42);
+      ctx.rotate(a+Math.PI/2);
+      ctx.beginPath(); ctx.ellipse(0,0,petalRx,petalRy,0,0,Math.PI*2);
+      ctx.fillStyle=i%2===0?cols[ci][0]:cols[ci][1]; ctx.fill();
+      ctx.restore();
+    }
+    // yellow center
+    ctx.beginPath(); ctx.arc(fc,fy,r*(0.28+0.1*bloom),0,Math.PI*2);
+    ctx.fillStyle='#FFE040'; ctx.fill();
+    ctx.beginPath(); ctx.arc(fc,fy,r*0.14,0,Math.PI*2);
+    ctx.fillStyle='#FFA000'; ctx.fill();
+  }
+}
+
+function drawFallingPetals() {
+  if (!fallingPetals.length) return;
+  for (const p of fallingPetals) {
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    ctx.beginPath(); ctx.ellipse(0,0,p.r*0.38,p.r*0.72,0,0,Math.PI*2);
+    ctx.fillStyle=p.col; ctx.fill();
+    ctx.restore();
+  }
 }
 
 function _candyCane(x,y) {

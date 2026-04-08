@@ -12,6 +12,29 @@ function handleSceneInteraction(x,y) {
   const sid=SCENES[sceneIdx].id;
   if (sid==='spring') {
     if (cloudHit(x,y)) { if(rainTimer<=0)initRain(); rainTimer=120; return true; }
+    // tap bloomed tulip → petals fall
+    if (tulipBloom>=60) {
+      const r=H*0.022;
+      const petalCols=[['#FF3355','#FF7799'],['#FF6820','#FFAA60'],['#CC22AA','#FF66CC']];
+      for (const [rx,ry] of SPRING_FLOWERS) {
+        const fx=rx*W, fy=ry*H-r*0.8;
+        if (Math.hypot(x-fx,y-fy)<r*3) {
+          const ci=Math.round((rx*W+ry*H)*0.08)%3;
+          for (let i=0;i<4;i++) {
+            const a=Math.random()*Math.PI*2;
+            fallingPetals.push({
+              x:fx+(Math.random()-0.5)*r,y:fy+(Math.random()-0.5)*r,
+              vx:Math.cos(a)*1.2*(0.5+Math.random()),
+              vy:-1.5-Math.random()*1.5,
+              col:petalCols[ci][Math.random()<0.5?0:1],
+              rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.18,
+              alpha:1, r:r*0.6,
+            });
+          }
+          return true;
+        }
+      }
+    }
   } else if (sid==='rainy') {
     if (Math.hypot(x-LIGHTNING.rx*W,y-LIGHTNING.ry*H)<H*0.07) { lightningFlash=18; return true; }
     for (const p of PUDDLES) {
@@ -48,7 +71,7 @@ function handleSceneInteraction(x,y) {
 
 function onSceneExit(idx) {
   if (SCENES[idx].id==='rainy') { rainTimer=0; rainDrops=[]; }
-  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[]; sofaBounce=0; laptopGlow=0; curtainClose=0;
+  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[]; sofaBounce=0; laptopGlow=0; curtainClose=0; tulipBloom=0; fallingPetals=[];
 }
 
 function onSceneEnter(idx) {

@@ -35,15 +35,29 @@
   // Rain overlay (global)
   drawRain();
   drawRipples();
+  drawFallingPetals();
   drawAccessoryPanel();
 
   // Rain update
+  const wasRaining=rainTimer>0;
   if (rainTimer>0) {
     rainTimer--;
     for (const d of rainDrops) {
       d.y+=d.speed;
       if (d.y>H*0.65) { d.y=-d.len; d.x=Math.random()*W; }
     }
+  }
+  // Rain stopped in spring → start tulip bloom
+  if (wasRaining&&rainTimer===0&&SCENES[sceneIdx].id==='spring'&&sceneOffsetTarget===0) {
+    if (tulipBloom===0) tulipBloom=1;
+  }
+  if (tulipBloom>0&&tulipBloom<60) tulipBloom++;
+  // Update falling petals
+  for (let i=fallingPetals.length-1;i>=0;i--) {
+    const p=fallingPetals[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.07; p.vx*=0.98;
+    p.rot+=p.rotV; p.alpha-=0.014;
+    if(p.alpha<=0) fallingPetals.splice(i,1);
   }
   // Rainy scene: keep rain going (only while still on rainy, not during swipe-away)
   if (SCENES[sceneIdx].id==='rainy' && sceneOffsetTarget===0) {
