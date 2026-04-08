@@ -77,29 +77,37 @@ function drawSceneDecorations(scene,ox) {
     ctx.restore();
     const mx=ox+W*0.82, my=H*0.1, mr=H*0.07;
     ctx.save();
+    // full moon base
     ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fillStyle='#FFFFCC'; ctx.fill();
     if (moonWink>0) {
-      // winking face: eyes as arcs, small smile
-      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.12; ctx.lineCap='round';
-      // left eye (wink — closed arc)
-      ctx.beginPath(); ctx.arc(mx-mr*0.28,my-mr*0.1,mr*0.13,Math.PI,0); ctx.stroke();
-      // right eye (normal dot)
-      ctx.beginPath(); ctx.arc(mx+mr*0.28,my-mr*0.1,mr*0.08,0,Math.PI*2); ctx.fillStyle='#8A9060'; ctx.fill();
+      // draw face first (on full circle), then shadow covers the non-crescent part
+      // face is shifted left so it sits naturally on the crescent
+      const fx=mx-mr*0.2, fy=my;
+      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.11; ctx.lineCap='round';
+      // left eye — wink (closed arc ∪)
+      ctx.beginPath(); ctx.arc(fx-mr*0.2,fy-mr*0.1,mr*0.12,Math.PI,0); ctx.stroke();
+      // right eye — dot
+      ctx.beginPath(); ctx.arc(fx+mr*0.18,fy-mr*0.1,mr*0.07,0,Math.PI*2);
+      ctx.fillStyle='#8A9060'; ctx.fill();
       // smile
-      ctx.beginPath(); ctx.arc(mx,my+mr*0.15,mr*0.22,0.2,Math.PI-0.2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(fx,fy+mr*0.12,mr*0.2,0.25,Math.PI-0.25); ctx.stroke();
       moonWink--;
-    } else {
-      ctx.beginPath(); ctx.arc(mx+mr*0.42,my-mr*0.08,mr*0.82,0,Math.PI*2);
-      ctx.fillStyle='#152850'; ctx.fill();
     }
+    // shadow circle — creates crescent (covers right side, naturally hides any face drawn there)
+    ctx.beginPath(); ctx.arc(mx+mr*0.42,my-mr*0.08,mr*0.82,0,Math.PI*2);
+    ctx.fillStyle='#152850'; ctx.fill();
     ctx.restore();
   }
   else if (scene.id==='rainy') {
     ctx.save();
-    for (const [rx,ry] of [[0.2,0.63],[0.55,0.65],[0.78,0.62]]) {
+    for (const p of PUDDLES) {
       ctx.globalAlpha=0.32;
-      ctx.beginPath(); ctx.ellipse(ox+rx*W,ry*H,W*0.055,H*0.013,0,0,Math.PI*2);
+      ctx.beginPath(); ctx.ellipse(ox+p.rx*W,p.ry*H,p.rw*W,p.rh*H,0,0,Math.PI*2);
       ctx.fillStyle='#7AAABB'; ctx.fill();
+      ctx.globalAlpha=0.15;
+      ctx.strokeStyle='#AACCDD'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(ox+p.rx*W,p.ry*H,p.rw*W*0.6,p.rh*H*0.5,0,0,Math.PI*2);
+      ctx.stroke();
     }
     ctx.restore();
     _drawLightningBolt(ox+LIGHTNING.rx*W, LIGHTNING.ry*H);
@@ -256,17 +264,26 @@ function drawSceneDecorations(scene,ox) {
       ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.022-H*0.145,lw*0.92,H*0.145,[8,8,2,2]);
       ctx.fill(); ctx.stroke();
       // screen display
+      // clip all screen content inside screen rect
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.clip();
       if (laptopGlow>0) {
-        // lit up: warm white glow with cute message
         const glowAlpha=Math.min(1,laptopGlow/20);
-        ctx.fillStyle=`rgba(255,245,220,${glowAlpha})`;
-        ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.fill();
-        ctx.save();
-        ctx.font=`bold ${H*0.028}px 'Jua',sans-serif`;
-        ctx.fillStyle=`rgba(80,50,20,${glowAlpha})`;
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText('잠깐 쉬어가꼬잉🐷', lx+lw*0.5, ly-H*0.022-H*0.076);
-        ctx.restore();
+        // warm glow bg
+        ctx.fillStyle=`rgba(255,245,220,${glowAlpha*0.95})`;
+        ctx.fillRect(lx,ly-H*0.16,lw,H*0.16);
+        // code-like lines with text
+        const lines=['while(true){','  쉬어가꼬잉🐷','  잠깐멈춰꼬잉','  // 괜찮꼬잉','}'];
+        ctx.font=`${H*0.018}px monospace`;
+        ctx.textAlign='left'; ctx.textBaseline='top';
+        const colors=['#A0704A','#6B3A2A','#8A5530','#999','#A0704A'];
+        lines.forEach((ln,i)=>{
+          ctx.fillStyle=`rgba(${i===1?'100,50,10':'80,60,40'},${glowAlpha})`;
+          ctx.fillStyle=colors[i].replace(')',`,${glowAlpha})`).replace('rgb','rgba').replace('#','');
+          ctx.fillStyle=`rgba(80,50,20,${glowAlpha})`;
+          if(i===1) ctx.fillStyle=`rgba(160,80,30,${glowAlpha})`;
+          ctx.fillText(ln, lx+lw*0.1, ly-H*0.022-H*0.118+i*H*0.022);
+        });
         laptopGlow--;
       } else {
         const sg=ctx.createLinearGradient(lx+lw*0.06,ly-H*0.155,lx+lw*0.94,ly-H*0.032);
@@ -279,6 +296,7 @@ function drawSceneDecorations(scene,ox) {
           ctx.beginPath(); ctx.roundRect(lx+lw*0.1,ly-H*0.022-H*0.105+i*H*0.024,lw*w,H*0.011,2); ctx.fill();
         }
       }
+      ctx.restore();
       // laptop hinge shadow
       ctx.fillStyle='rgba(0,0,0,0.12)';
       ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.023,lw*0.92,H*0.004,1); ctx.fill();
@@ -454,7 +472,7 @@ function drawRipples() {
       ctx.strokeStyle='rgba(130,190,220,1)';
       ctx.lineWidth=1.5;
       ctx.beginPath();
-      ctx.ellipse(r.x,r.y,W*0.04*rp,H*0.01*rp,0,0,Math.PI*2);
+      ctx.ellipse(r.x,r.y,(r.rw||0.04)*W*1.4*rp,(r.rh||0.01)*H*1.4*rp,0,0,Math.PI*2);
       ctx.stroke();
     }
   }

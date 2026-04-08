@@ -14,8 +14,10 @@ function handleSceneInteraction(x,y) {
     if (cloudHit(x,y)) { if(rainTimer<=0)initRain(); rainTimer=120; return true; }
   } else if (sid==='rainy') {
     if (Math.hypot(x-LIGHTNING.rx*W,y-LIGHTNING.ry*H)<H*0.07) { lightningFlash=18; return true; }
-    for (const [rx,ry] of [[0.2,0.63],[0.55,0.65],[0.78,0.62]]) {
-      if (Math.hypot(x-rx*W,y-ry*H)<W*0.07) { ripples.push({x:rx*W,y:ry*H,t:0}); return true; }
+    for (const p of PUDDLES) {
+      if (Math.hypot(x-p.rx*W,y-p.ry*H)<p.rw*W*1.5) {
+        ripples.push({x:p.rx*W,y:p.ry*H,t:0,rw:p.rw,rh:p.rh}); return true;
+      }
     }
   } else if (sid==='cozy') {
     const gy=H*0.6;
