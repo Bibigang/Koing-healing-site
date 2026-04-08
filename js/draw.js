@@ -78,8 +78,20 @@ function drawSceneDecorations(scene,ox) {
     const mx=ox+W*0.82, my=H*0.1, mr=H*0.07;
     ctx.save();
     ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fillStyle='#FFFFCC'; ctx.fill();
-    ctx.beginPath(); ctx.arc(mx+mr*0.42,my-mr*0.08,mr*0.82,0,Math.PI*2);
-    ctx.fillStyle='#152850'; ctx.fill();
+    if (moonWink>0) {
+      // winking face: eyes as arcs, small smile
+      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.12; ctx.lineCap='round';
+      // left eye (wink — closed arc)
+      ctx.beginPath(); ctx.arc(mx-mr*0.28,my-mr*0.1,mr*0.13,Math.PI,0); ctx.stroke();
+      // right eye (normal dot)
+      ctx.beginPath(); ctx.arc(mx+mr*0.28,my-mr*0.1,mr*0.08,0,Math.PI*2); ctx.fillStyle='#8A9060'; ctx.fill();
+      // smile
+      ctx.beginPath(); ctx.arc(mx,my+mr*0.15,mr*0.22,0.2,Math.PI-0.2); ctx.stroke();
+      moonWink--;
+    } else {
+      ctx.beginPath(); ctx.arc(mx+mr*0.42,my-mr*0.08,mr*0.82,0,Math.PI*2);
+      ctx.fillStyle='#152850'; ctx.fill();
+    }
     ctx.restore();
   }
   else if (scene.id==='rainy') {
@@ -406,6 +418,30 @@ function _drawLightningBolt(x,y) {
   ctx.lineTo(x+s*0.22,y);
   ctx.closePath();
   ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// ── Ripples ───────────────────────────────────────────────
+function drawRipples() {
+  if (!ripples.length) return;
+  ctx.save();
+  for (let i=ripples.length-1;i>=0;i--) {
+    const r=ripples[i];
+    r.t++;
+    const maxT=40, progress=r.t/maxT;
+    if (r.t>maxT) { ripples.splice(i,1); continue; }
+    for (let ring=0;ring<3;ring++) {
+      const delay=ring*8;
+      if (r.t<delay) continue;
+      const rp=Math.min(1,(r.t-delay)/(maxT-delay));
+      ctx.globalAlpha=(1-rp)*0.55;
+      ctx.strokeStyle='rgba(130,190,220,1)';
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.ellipse(r.x,r.y,W*0.04*rp,H*0.01*rp,0,0,Math.PI*2);
+      ctx.stroke();
+    }
+  }
   ctx.restore();
 }
 

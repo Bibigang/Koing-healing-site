@@ -14,15 +14,20 @@ function handleSceneInteraction(x,y) {
     if (cloudHit(x,y)) { if(rainTimer<=0)initRain(); rainTimer=120; return true; }
   } else if (sid==='rainy') {
     if (Math.hypot(x-LIGHTNING.rx*W,y-LIGHTNING.ry*H)<H*0.07) { lightningFlash=18; return true; }
+    for (const [rx,ry] of [[0.2,0.63],[0.55,0.65],[0.78,0.62]]) {
+      if (Math.hypot(x-rx*W,y-ry*H)<W*0.07) { ripples.push({x:rx*W,y:ry*H,t:0}); return true; }
+    }
   } else if (sid==='night') {
     if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
+    const mx=W*0.82, my=H*0.1, mr=H*0.07;
+    if (Math.hypot(x-mx,y-my)<mr*1.3) { moonWink=80; return true; }
   }
   return false;
 }
 
 function onSceneExit(idx) {
   if (SCENES[idx].id==='rainy') { rainTimer=0; rainDrops=[]; }
-  starEyeTimer=0; lightningFlash=0;
+  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[];
 }
 
 function onSceneEnter(idx) {

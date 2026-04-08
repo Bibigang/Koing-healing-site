@@ -34,6 +34,7 @@
 
   // Rain overlay (global)
   drawRain();
+  drawRipples();
   drawAccessoryPanel();
 
   // Rain update

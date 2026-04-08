@@ -41,6 +41,8 @@ let sceneIdx=0;
 let sceneOffsetPx=0, sceneOffsetTarget=0; // horizontal slide animation
 let swipeStartX=null, swipeLiveX=0;       // live swipe tracking
 let starEyeTimer=0, starPulse=0, lightningFlash=0;
+let moonWink=0;        // >0: moon is winking (counts down)
+let ripples=[];        // [{x,y,t}] water ripple effects
 
 // ── Panel scroll ──────────────────────────────────────────
 let panelScroll=0, panelMaxScroll=0;
