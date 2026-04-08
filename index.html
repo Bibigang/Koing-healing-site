@@ -163,13 +163,6 @@ const SCENES = [
     items: DEFAULT_ITEMS, // TODO: define spring-specific items
   },
   {
-    id:'sunset', label:'노을',
-    sky:['#5C1E58','#C43650','#EF6428','#FFB040','#FFE068'], ground:['#B8724A','#7A3C18'], groundY:0.62,
-    shadowColor:'rgba(90,30,0,0.28)',
-    cloudFill:'rgba(255,155,100,0.78)', cloudShadow:'rgba(120,35,75,0.38)',
-    items: [{type:'odeng',rx:0.18,ry:0.78},{type:'icecream',rx:0.5,ry:0.82},{type:'soju',rx:0.82,ry:0.78}],
-  },
-  {
     id:'night', label:'밤',
     sky:['#0D1B3E','#152850'], ground:['#1A3A1A','#0D2010'], groundY:0.6,
     shadowColor:'rgba(0,20,0,0.35)',
@@ -1541,60 +1534,6 @@ function drawSceneDecorations(scene,ox) {
     for (const [rx,ry] of [[0.1,0.64],[0.28,0.66],[0.55,0.63],[0.72,0.65],[0.88,0.62]])
       _bgFlower(ox+rx*W,ry*H,H*0.022);
   }
-  else if (scene.id==='sunset') {
-    const sx=ox+W*0.7, sy=gy;
-    // horizon warm glow band
-    const hg=ctx.createLinearGradient(ox,gy-H*0.3,ox,gy);
-    hg.addColorStop(0,'rgba(255,140,50,0)'); hg.addColorStop(1,'rgba(255,200,80,0.28)');
-    ctx.fillStyle=hg; ctx.fillRect(ox,gy-H*0.3,W,H*0.3);
-    // sun rays (clipped to sky)
-    ctx.save(); ctx.beginPath(); ctx.rect(ox,0,W,gy); ctx.clip();
-    ctx.save(); ctx.translate(sx,sy);
-    for (let i=0;i<14;i++) {
-      const a=(i/14)*Math.PI*2, sp=0.07;
-      const rg=ctx.createLinearGradient(0,0,Math.cos(a)*H*0.32,Math.sin(a)*H*0.32);
-      rg.addColorStop(0,'rgba(255,220,100,0.14)'); rg.addColorStop(1,'rgba(255,160,30,0)');
-      ctx.fillStyle=rg;
-      ctx.beginPath(); ctx.moveTo(0,0);
-      ctx.lineTo(Math.cos(a-sp)*H*0.32,Math.sin(a-sp)*H*0.32);
-      ctx.lineTo(Math.cos(a+sp)*H*0.32,Math.sin(a+sp)*H*0.32);
-      ctx.fill();
-    }
-    ctx.restore();
-    // sun glow halo
-    const gw=ctx.createRadialGradient(sx,sy,H*0.04,sx,sy,H*0.27);
-    gw.addColorStop(0,'rgba(255,230,100,0.72)');
-    gw.addColorStop(0.28,'rgba(255,130,40,0.38)');
-    gw.addColorStop(1,'rgba(240,80,0,0)');
-    ctx.fillStyle=gw; ctx.beginPath(); ctx.arc(sx,sy,H*0.27,0,Math.PI*2); ctx.fill();
-    // sun disc (half above horizon)
-    ctx.beginPath(); ctx.arc(sx,sy,H*0.075,Math.PI,0);
-    ctx.fillStyle='#FFE858'; ctx.fill();
-    ctx.restore();
-    // rolling hills silhouette (mid-dark)
-    ctx.fillStyle='rgba(60,22,8,0.52)';
-    ctx.beginPath(); ctx.moveTo(ox,gy);
-    ctx.quadraticCurveTo(ox+W*0.18,gy-H*0.13,ox+W*0.36,gy);
-    ctx.quadraticCurveTo(ox+W*0.54,gy-H*0.17,ox+W*0.72,gy);
-    ctx.quadraticCurveTo(ox+W*0.86,gy-H*0.1,ox+W,gy);
-    ctx.lineTo(ox+W,gy+H*0.04); ctx.lineTo(ox,gy+H*0.04); ctx.closePath(); ctx.fill();
-    // pine tree silhouettes
-    ctx.fillStyle='rgba(14,52,18,0.92)';
-    _sunsetTree(ox+W*0.07,gy,H*0.3);
-    _sunsetTree(ox+W*0.13,gy,H*0.23);
-    _sunsetTree(ox+W*0.88,gy,H*0.26);
-    _sunsetTree(ox+W*0.94,gy,H*0.2);
-    // birds
-    ctx.strokeStyle='rgba(25,8,2,0.62)'; ctx.lineWidth=1.8; ctx.lineCap='round';
-    for (const [rx,ry,sc] of [[0.32,0.17,1],[0.37,0.14,0.82],[0.42,0.19,0.92],[0.46,0.12,0.72],[0.27,0.21,0.78]]) {
-      const bx=ox+rx*W, by=ry*H, bs=H*0.013*sc;
-      ctx.beginPath();
-      ctx.moveTo(bx-bs,by+bs*0.4);
-      ctx.quadraticCurveTo(bx-bs*0.4,by-bs*0.35,bx,by);
-      ctx.quadraticCurveTo(bx+bs*0.4,by-bs*0.35,bx+bs,by+bs*0.4);
-      ctx.stroke();
-    }
-  }
   else if (scene.id==='night') {
     ctx.save();
     for (let si=0;si<NIGHT_STARS.length;si++) {
@@ -1869,18 +1808,6 @@ function drawSceneDecorations(scene,ox) {
   }
 }
 
-function _sunsetTree(x,base,h) {
-  ctx.beginPath();
-  ctx.moveTo(x,base-h*0.02);
-  ctx.lineTo(x-h*0.17,base-h*0.38); ctx.lineTo(x-h*0.1,base-h*0.38);
-  ctx.lineTo(x-h*0.21,base-h*0.65); ctx.lineTo(x-h*0.07,base-h*0.65);
-  ctx.lineTo(x-h*0.14,base-h*0.88); ctx.lineTo(x,base-h);
-  ctx.lineTo(x+h*0.14,base-h*0.88);
-  ctx.lineTo(x+h*0.07,base-h*0.65); ctx.lineTo(x+h*0.21,base-h*0.65);
-  ctx.lineTo(x+h*0.1,base-h*0.38);  ctx.lineTo(x+h*0.17,base-h*0.38);
-  ctx.closePath(); ctx.fill();
-  ctx.fillRect(x-h*0.045,base-h*0.12,h*0.09,h*0.12);
-}
 
 function _bgFlower(x,y,r) {
   // small tulip — clearly distinct from the 6-petal pink foreground flower item
@@ -1989,7 +1916,7 @@ function rebuildFoods(idx) {
 
 function handleSceneInteraction(x,y) {
   const sid=SCENES[sceneIdx].id;
-  if (sid==='spring'||sid==='sunset') {
+  if (sid==='spring') {
     if (cloudHit(x,y)) { if(rainTimer<=0)initRain(); rainTimer=120; return true; }
   } else if (sid==='rainy') {
     if (Math.hypot(x-LIGHTNING.rx*W,y-LIGHTNING.ry*H)<H*0.07) { lightningFlash=18; return true; }
