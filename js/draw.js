@@ -469,24 +469,54 @@ function _bgFlower(x,y,r,seed,bloom=0) {
     ctx.bezierCurveTo(x+r*0.28,y-r*0.42, x+r*0.32,y-r*1.05, x,y-r*1.42);
     ctx.fillStyle=cols[ci][1]; ctx.fill();
   } else {
-    // blooming → fully open: 6 petals spread outward
-    const fc=x, fy=y-r*0.9;           // flower center
-    const spread=r*(1.2+0.8*bloom);   // petal reach grows with bloom
-    const petalRx=r*(0.38+0.22*bloom), petalRy=r*(0.78+0.3*bloom);
-    for (let i=0;i<6;i++) {
-      const a=(i/6)*Math.PI*2-Math.PI/2;
-      ctx.save();
-      ctx.translate(fc+Math.cos(a)*spread*0.55, fy+Math.sin(a)*spread*0.42);
-      ctx.rotate(a+Math.PI/2);
-      ctx.beginPath(); ctx.ellipse(0,0,petalRx,petalRy,0,0,Math.PI*2);
-      ctx.fillStyle=i%2===0?cols[ci][0]:cols[ci][1]; ctx.fill();
+    // blooming: same tulip DNA, petals fan open from base
+    const t=bloom;
+    const col0=cols[ci][0], col1=cols[ci][1];
+
+    // back center petal — widens as it opens
+    ctx.beginPath();
+    ctx.moveTo(x, y-r*(1.5+0.35*t));
+    ctx.bezierCurveTo(x-r*(0.85+0.4*t), y-r*1.05, x-r*(0.8+0.45*t), y-r*0.1, x-r*(0.08+0.18*t), y);
+    ctx.lineTo(x+r*(0.08+0.18*t), y);
+    ctx.bezierCurveTo(x+r*(0.8+0.45*t), y-r*0.1, x+r*(0.85+0.4*t), y-r*1.05, x, y-r*(1.5+0.35*t));
+    ctx.fillStyle=col0; ctx.fill();
+    // inner highlight on back petal
+    ctx.beginPath();
+    ctx.moveTo(x, y-r*(1.42+0.3*t));
+    ctx.bezierCurveTo(x-r*(0.32+0.1*t), y-r*1.05, x-r*(0.28+0.1*t), y-r*0.42, x, y-r*0.32);
+    ctx.bezierCurveTo(x+r*(0.28+0.1*t), y-r*0.42, x+r*(0.32+0.1*t), y-r*1.05, x, y-r*(1.42+0.3*t));
+    ctx.fillStyle=col1; ctx.fill();
+
+    // left outer petal — fans outward to the left
+    { const ltx=x-r*1.25*t, lty=y-r*(1.15-0.05*t);
+      ctx.beginPath();
+      ctx.moveTo(ltx, lty);
+      ctx.bezierCurveTo(x-r*(0.95+0.15*t), lty-r*0.25, x-r*(0.35+0.5*t), y-r*0.12, x-r*0.06, y);
+      ctx.lineTo(x+r*0.06, y);
+      ctx.bezierCurveTo(x-r*0.05*t, y-r*0.18, x-r*(0.25+0.45*t), lty-r*0.18, ltx, lty);
+      ctx.fillStyle=col1; ctx.fill();
+    }
+
+    // right outer petal — mirror of left
+    { const rtx=x+r*1.25*t, rty=y-r*(1.15-0.05*t);
+      ctx.beginPath();
+      ctx.moveTo(rtx, rty);
+      ctx.bezierCurveTo(x+r*(0.95+0.15*t), rty-r*0.25, x+r*(0.35+0.5*t), y-r*0.12, x+r*0.06, y);
+      ctx.lineTo(x-r*0.06, y);
+      ctx.bezierCurveTo(x+r*0.05*t, y-r*0.18, x+r*(0.25+0.45*t), rty-r*0.18, rtx, rty);
+      ctx.fillStyle=col1; ctx.fill();
+    }
+
+    // yellow stamen appears as petals open past halfway
+    if (t>0.55) {
+      const sa=(t-0.55)/0.45;
+      ctx.save(); ctx.globalAlpha=sa;
+      ctx.beginPath(); ctx.arc(x, y-r*0.82, r*0.22, 0, Math.PI*2);
+      ctx.fillStyle='#FFE040'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y-r*0.82, r*0.1, 0, Math.PI*2);
+      ctx.fillStyle='#FFA000'; ctx.fill();
       ctx.restore();
     }
-    // yellow center
-    ctx.beginPath(); ctx.arc(fc,fy,r*(0.28+0.1*bloom),0,Math.PI*2);
-    ctx.fillStyle='#FFE040'; ctx.fill();
-    ctx.beginPath(); ctx.arc(fc,fy,r*0.14,0,Math.PI*2);
-    ctx.fillStyle='#FFA000'; ctx.fill();
   }
 }
 
