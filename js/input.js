@@ -15,11 +15,12 @@ function handleSceneInteraction(x,y) {
     // tap bloomed tulip → petals fall
     if (tulipBloom>=60) {
       const r=H*0.022;
-      const petalCols=[['#FF3355','#FF7799'],['#FF6820','#FFAA60'],['#CC22AA','#FF66CC']];
-      for (const [rx,ry] of SPRING_FLOWERS) {
+      const petalCols=[['#FFD700','#FFF176'],['#FF3311','#FF7755'],['#F5F0E8','#EDE6D2'],['#4488FF','#99CCFF'],['#FF7700','#FFBB55']];
+      for (let fi=0;fi<SPRING_FLOWERS.length;fi++) {
+        const [rx,ry]=SPRING_FLOWERS[fi];
         const fx=rx*W, fy=ry*H-r*0.8;
         if (Math.hypot(x-fx,y-fy)<r*3) {
-          const ci=Math.round((rx*W+ry*H)*0.08)%3;
+          const ci=fi===3?3:fi===4?4:Math.round((rx*W+ry*H)*0.08)%3;
           for (let i=0;i<4;i++) {
             const a=Math.random()*Math.PI*2;
             fallingPetals.push({

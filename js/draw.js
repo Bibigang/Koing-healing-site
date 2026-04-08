@@ -62,8 +62,8 @@ function drawSceneDecorations(scene,ox) {
   const gy=H*scene.groundY;
   if (scene.id==='spring') {
     const bBloom=tulipBloom>=60?1:tulipBloom/60;
-  for (const [rx,ry] of SPRING_FLOWERS)
-    _bgFlower(ox+rx*W,ry*H,H*0.022,rx*W+ry*H,bBloom);
+  SPRING_FLOWERS.forEach(([rx,ry],i)=>
+    _bgFlower(ox+rx*W,ry*H,H*0.022,rx*W+ry*H,bBloom,i));
   }
   else if (scene.id==='night') {
     ctx.save();
@@ -441,7 +441,7 @@ function drawSceneDecorations(scene,ox) {
 }
 
 
-function _bgFlower(x,y,r,seed,bloom=0) {
+function _bgFlower(x,y,r,seed,bloom=0,idx=-1) {
   // stem
   ctx.strokeStyle='#4A8828'; ctx.lineWidth=r*0.3; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+r*2.6); ctx.stroke();
@@ -452,8 +452,8 @@ function _bgFlower(x,y,r,seed,bloom=0) {
   ctx.quadraticCurveTo(x+r*0.45,y+r*0.8, x,y+r*1.5);
   ctx.fillStyle='#5AAA2C'; ctx.fill();
 
-  const ci=Math.round((seed??x+y)*0.08)%3;
-  const cols=[['#FFD700','#FFF176'],['#FF3311','#FF7755'],['#F5F0E8','#EDE6D2']];
+  const cols=[['#FFD700','#FFF176'],['#FF3311','#FF7755'],['#F5F0E8','#EDE6D2'],['#4488FF','#99CCFF'],['#FF7700','#FFBB55']];
+  const ci=idx===3?3:idx===4?4:Math.round((seed??x+y)*0.08)%3;
 
   if (bloom<0.05) {
     // closed bud
