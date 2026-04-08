@@ -473,7 +473,7 @@ function _bgFlower(x,y,r,seed,bloom=0,idx=-1) {
     const t=bloom;
     const col0=cols[ci][0], col1=cols[ci][1];
 
-    // back two petals — split apart as bloom increases
+    // back side petals — split left/right from base as bloom increases
     for (const side of [-1,1]) {
       const tipX=x+side*r*(0.2+0.85*t);
       const tipY=y-r*(1.45+0.35*t);
@@ -483,13 +483,25 @@ function _bgFlower(x,y,r,seed,bloom=0,idx=-1) {
       ctx.lineTo(x+side*r*0.07, y);
       ctx.bezierCurveTo(x+side*r*(0.08+0.05*t), y-r*0.3, x+side*r*(0.1+0.4*t), y-r*1.1, tipX, tipY);
       ctx.fillStyle=col0; ctx.fill();
-      // inner highlight
       ctx.beginPath();
       ctx.moveTo(tipX, tipY+r*0.08);
       ctx.bezierCurveTo(x+side*r*(0.42+0.2*t), y-r*0.9, x+side*r*(0.28+0.1*t), y-r*0.35, x+side*r*0.07, y-r*0.1);
       ctx.bezierCurveTo(x+side*r*(0.06+0.08*t), y-r*0.5, x+side*r*(0.15+0.25*t), y-r*1.0, tipX, tipY+r*0.08);
       ctx.fillStyle=col1; ctx.fill();
     }
+
+    // back center petal — original teardrop pointing straight up
+    ctx.beginPath();
+    ctx.moveTo(x, y-r*(1.5+0.35*t));
+    ctx.bezierCurveTo(x-r*(0.85+0.4*t), y-r*1.05, x-r*(0.8+0.45*t), y-r*0.1, x-r*(0.08+0.18*t), y);
+    ctx.lineTo(x+r*(0.08+0.18*t), y);
+    ctx.bezierCurveTo(x+r*(0.8+0.45*t), y-r*0.1, x+r*(0.85+0.4*t), y-r*1.05, x, y-r*(1.5+0.35*t));
+    ctx.fillStyle=col0; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x, y-r*(1.42+0.3*t));
+    ctx.bezierCurveTo(x-r*(0.32+0.1*t), y-r*1.05, x-r*(0.28+0.1*t), y-r*0.42, x, y-r*0.32);
+    ctx.bezierCurveTo(x+r*(0.28+0.1*t), y-r*0.42, x+r*(0.32+0.1*t), y-r*1.05, x, y-r*(1.42+0.3*t));
+    ctx.fillStyle=col1; ctx.fill();
 
     // left outer petal — fans outward to the left
     { const ltx=x-r*1.25*t, lty=y-r*(1.15-0.05*t);
