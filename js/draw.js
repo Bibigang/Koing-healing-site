@@ -507,16 +507,6 @@ function _bgFlower(x,y,r,seed,bloom=0,idx=-1) {
       ctx.fillStyle=col1; ctx.fill();
     }
 
-    // yellow stamen appears as petals open past halfway
-    if (t>0.55) {
-      const sa=(t-0.55)/0.45;
-      ctx.save(); ctx.globalAlpha=sa;
-      ctx.beginPath(); ctx.arc(x, y-r*1.04, r*0.22, 0, Math.PI*2);
-      ctx.fillStyle='#FFE040'; ctx.fill();
-      ctx.beginPath(); ctx.arc(x, y-r*1.04, r*0.1, 0, Math.PI*2);
-      ctx.fillStyle='#FFA000'; ctx.fill();
-      ctx.restore();
-    }
   }
 }
 
