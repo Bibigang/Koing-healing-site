@@ -159,7 +159,9 @@ function drawSceneDecorations(scene,ox) {
     ctx.strokeStyle='#FFAA66'; ctx.lineWidth=1.5; ctx.stroke();
     ctx.restore();
     // 1인용 카우치 소파 (와인 컬러)
-    { const sx=ox+W*0.04, sy=gy-H*0.2, sw=W*0.28, sh=H*0.17;
+    { const bounceDy=sofaBounce>0?Math.sin(sofaBounce*0.38)*(sofaBounce/40)*H*0.022:0;
+      if(sofaBounce>0) sofaBounce--;
+      const sx=ox+W*0.04, sy=gy-H*0.2-bounceDy, sw=W*0.28, sh=H*0.17;
       const cDark='#4A1828', cMid='#6B2440', cLight='#8C3458', cHighlight='#A84870';
       const legH=H*0.022, legW=W*0.016;
       // legs
@@ -253,15 +255,29 @@ function drawSceneDecorations(scene,ox) {
       ctx.fillStyle='#222230'; ctx.strokeStyle='#18181E'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.022-H*0.145,lw*0.92,H*0.145,[8,8,2,2]);
       ctx.fill(); ctx.stroke();
-      // screen display gradient
-      const sg=ctx.createLinearGradient(lx+lw*0.06,ly-H*0.155,lx+lw*0.94,ly-H*0.032);
-      sg.addColorStop(0,'#5898B8'); sg.addColorStop(1,'#306880');
-      ctx.fillStyle=sg;
-      ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.fill();
-      // screen content lines (code suggestion)
-      ctx.fillStyle='rgba(255,255,255,0.2)';
-      for (const [i,w] of [[0,0.52],[1,0.68],[2,0.38],[3,0.58]]) {
-        ctx.beginPath(); ctx.roundRect(lx+lw*0.1,ly-H*0.022-H*0.105+i*H*0.024,lw*w,H*0.011,2); ctx.fill();
+      // screen display
+      if (laptopGlow>0) {
+        // lit up: warm white glow with cute message
+        const glowAlpha=Math.min(1,laptopGlow/20);
+        ctx.fillStyle=`rgba(255,245,220,${glowAlpha})`;
+        ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.fill();
+        ctx.save();
+        ctx.font=`bold ${H*0.028}px 'Jua',sans-serif`;
+        ctx.fillStyle=`rgba(80,50,20,${glowAlpha})`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('잠깐 쉬어가꼬잉🐷', lx+lw*0.5, ly-H*0.022-H*0.076);
+        ctx.restore();
+        laptopGlow--;
+      } else {
+        const sg=ctx.createLinearGradient(lx+lw*0.06,ly-H*0.155,lx+lw*0.94,ly-H*0.032);
+        sg.addColorStop(0,'#5898B8'); sg.addColorStop(1,'#306880');
+        ctx.fillStyle=sg;
+        ctx.beginPath(); ctx.roundRect(lx+lw*0.07,ly-H*0.022-H*0.132,lw*0.86,H*0.112,[5,5,1,1]); ctx.fill();
+        // screen content lines
+        ctx.fillStyle='rgba(255,255,255,0.2)';
+        for (const [i,w] of [[0,0.52],[1,0.68],[2,0.38],[3,0.58]]) {
+          ctx.beginPath(); ctx.roundRect(lx+lw*0.1,ly-H*0.022-H*0.105+i*H*0.024,lw*w,H*0.011,2); ctx.fill();
+        }
       }
       // laptop hinge shadow
       ctx.fillStyle='rgba(0,0,0,0.12)';

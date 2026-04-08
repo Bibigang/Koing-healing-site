@@ -43,6 +43,8 @@ let swipeStartX=null, swipeLiveX=0;       // live swipe tracking
 let starEyeTimer=0, starPulse=0, lightningFlash=0;
 let moonWink=0;        // >0: moon is winking (counts down)
 let ripples=[];        // [{x,y,t}] water ripple effects
+let sofaBounce=0;      // >0: sofa cushion bouncing (counts down)
+let laptopGlow=0;      // >0: laptop screen lit up (counts down)
 
 // ── Panel scroll ──────────────────────────────────────────
 let panelScroll=0, panelMaxScroll=0;

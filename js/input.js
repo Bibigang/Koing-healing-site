@@ -17,6 +17,15 @@ function handleSceneInteraction(x,y) {
     for (const [rx,ry] of [[0.2,0.63],[0.55,0.65],[0.78,0.62]]) {
       if (Math.hypot(x-rx*W,y-ry*H)<W*0.07) { ripples.push({x:rx*W,y:ry*H,t:0}); return true; }
     }
+  } else if (sid==='cozy') {
+    const gy=H*0.6;
+    // sofa: sx=W*0.04, sy=gy-H*0.2, sw=W*0.28, sh=H*0.17
+    if (x>W*0.04&&x<W*0.32&&y>gy-H*0.2&&y<gy) { sofaBounce=40; return true; }
+  } else if (sid==='study') {
+    const gy=H*0.6;
+    // laptop screen area
+    const lx=W*0.16, lw=W*0.24;
+    if (x>lx&&x<lx+lw&&y>gy-H*0.167&&y<gy) { laptopGlow=90; return true; }
   } else if (sid==='night') {
     if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
     const mx=W*0.82, my=H*0.1, mr=H*0.07;
@@ -27,7 +36,7 @@ function handleSceneInteraction(x,y) {
 
 function onSceneExit(idx) {
   if (SCENES[idx].id==='rainy') { rainTimer=0; rainDrops=[]; }
-  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[];
+  starEyeTimer=0; lightningFlash=0; moonWink=0; ripples=[]; sofaBounce=0; laptopGlow=0;
 }
 
 function onSceneEnter(idx) {
