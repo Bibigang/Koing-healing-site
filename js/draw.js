@@ -253,7 +253,7 @@ function drawSceneDecorations(scene,ox) {
       ctx.restore();
     }
     // open laptop (left side)
-    { const lx=ox+W*0.16, ly=gy, lw=W*0.24;
+    { const lx=ox+W*0.04, ly=gy, lw=W*0.24;
       // base / keyboard
       ctx.fillStyle='#CACAC5'; ctx.strokeStyle='#A5A5A0'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.roundRect(lx,ly-H*0.022,lw,H*0.022,[3,3,7,7]); ctx.fill(); ctx.stroke();

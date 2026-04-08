@@ -26,7 +26,7 @@ function handleSceneInteraction(x,y) {
   } else if (sid==='study') {
     const gy=H*0.6;
     // laptop screen area
-    const lx=W*0.16, lw=W*0.24;
+    const lx=W*0.04, lw=W*0.24;
     if (x>lx&&x<lx+lw&&y>gy-H*0.167&&y<gy) { laptopGlow=90; return true; }
   } else if (sid==='night') {
     if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
