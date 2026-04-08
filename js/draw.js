@@ -2,15 +2,20 @@
 function drawAccessoryPanel() {
   const pw=Math.min(W*0.13,72), ph=H*0.44;
   ctx.save();
-  ctx.fillStyle='rgba(255,240,250,0.62)'; ctx.strokeStyle='rgba(255,175,210,0.7)'; ctx.lineWidth=2;
+  ctx.fillStyle='rgba(255,238,248,0.92)'; ctx.strokeStyle='rgba(255,175,210,0.75)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.roundRect(8,H*0.04,pw,ph,18); ctx.fill(); ctx.stroke();
   if (panelMaxScroll>0) {
-    const barH=Math.max(18,ph*ph/(ph+panelMaxScroll));
-    const barY=H*0.04+(ph-barH)*(panelScroll/panelMaxScroll);
-    ctx.fillStyle='rgba(220,160,200,0.35)';
-    ctx.beginPath(); ctx.roundRect(8+pw-5,H*0.04+3,3,ph-6,2); ctx.fill();
-    ctx.fillStyle='rgba(180,80,160,0.62)';
-    ctx.beginPath(); ctx.roundRect(8+pw-5,barY,3,barH,2); ctx.fill();
+    const barH=Math.max(24,ph*ph/(ph+panelMaxScroll));
+    const barY=H*0.04+6+(ph-12-barH)*(panelScroll/panelMaxScroll);
+    // track (left side of panel)
+    ctx.fillStyle='rgba(220,160,200,0.22)';
+    ctx.beginPath(); ctx.roundRect(10,H*0.04+6,4,ph-12,4); ctx.fill();
+    // thumb
+    ctx.fillStyle='rgba(200,100,170,0.7)';
+    ctx.beginPath(); ctx.roundRect(10,barY,4,barH,4); ctx.fill();
+    // thumb highlight
+    ctx.fillStyle='rgba(255,200,235,0.6)';
+    ctx.beginPath(); ctx.roundRect(11,barY+2,2,barH*0.4,2); ctx.fill();
   }
   ctx.restore();
 }

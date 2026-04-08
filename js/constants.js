@@ -58,7 +58,7 @@ let panelScroll=0, panelMaxScroll=0;
 let panelDragging=false, panelDragStartY=0, panelScrollStart=0;
 function updatePanelMaxScroll() {
   const ph=H*0.44;
-  const lastY=H*0.09+(accessories.length-1)*H*0.10+H*0.09;
+  const lastY=H*0.07+(accessories.length-1)*H*0.075+H*0.075;
   panelMaxScroll=Math.max(0,lastY-H*0.04-ph);
   panelScroll=Math.min(panelScroll,panelMaxScroll);
 }

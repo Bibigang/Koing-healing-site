@@ -7,7 +7,7 @@ class Accessory {
   }
   _syncPanel() {
     const pw=Math.min(W*0.13,72);
-    this.panelX=8+pw/2; this.panelY=H*0.09+this.idx*H*0.10;
+    this.panelX=8+pw/2; this.panelY=H*0.07+this.idx*H*0.075;
     if (!this.worn&&!this.dragging) { this.x=this.panelX; this.y=this.panelY; }
   }
   get _panelS() { return Math.min(W*0.08,50); }
