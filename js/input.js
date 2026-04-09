@@ -61,8 +61,12 @@ function handleSceneInteraction(x,y) {
     const gy=H*0.6;
     const lx=W*0.04, lw=W*0.24;
     if (x>lx&&x<lx+lw&&y>gy-H*0.167&&y<gy) { laptopGlow=90; return true; }
-    // lamp shade click → toggle on/off (shade at W*0.60, gy-H*0.30 ~ gy-H*0.225)
+    // lamp shade click → toggle on/off
     if (x>W*0.545&&x<W*0.655&&y>gy-H*0.31&&y<gy-H*0.21) { lampOn=!lampOn; return true; }
+    // wall clock click → second hand spins fast
+    if (Math.hypot(x-W*0.84,y-H*0.15)<Math.min(W*0.072,H*0.082)) { clockTick=90; return true; }
+    // cork board click → next message
+    if (x>W*0.08&&x<W*0.29&&y>H*0.06&&y<H*0.30) { corkMsgIdx=(corkMsgIdx+1)%5; return true; }
   } else if (sid==='night') {
     if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
     const mx=W*0.82, my=H*0.1, mr=H*0.07;

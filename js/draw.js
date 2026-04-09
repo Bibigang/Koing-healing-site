@@ -305,6 +305,72 @@ function drawSceneDecorations(scene,ox) {
     }
   }
   else if (scene.id==='study') {
+    // ── wall clock (upper right) ──────────────────────────
+    { const ccx=ox+W*0.84, ccy=H*0.15, cr=Math.min(W*0.062,H*0.072);
+      // outer ring
+      ctx.fillStyle='#F5EFE0'; ctx.strokeStyle='#A88860'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(ccx,ccy,cr,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle='#C8AE80'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(ccx,ccy,cr*0.9,0,Math.PI*2); ctx.stroke();
+      // hour marks
+      for (let i=0;i<12;i++) {
+        const a=i/12*Math.PI*2-Math.PI/2;
+        ctx.strokeStyle='#6B4E30'; ctx.lineWidth=i%3===0?2.5:1.2;
+        ctx.beginPath();
+        ctx.moveTo(ccx+Math.cos(a)*cr*0.74,ccy+Math.sin(a)*cr*0.74);
+        ctx.lineTo(ccx+Math.cos(a)*cr*0.88,ccy+Math.sin(a)*cr*0.88);
+        ctx.stroke();
+      }
+      // hands
+      const now=new Date();
+      const hh=now.getHours()%12+now.getMinutes()/60;
+      const mm=now.getMinutes()+now.getSeconds()/60;
+      const ss=now.getSeconds()+(clockTick>0?(120-clockTick)*3:0);
+      ctx.lineCap='round';
+      for (const [ang,len,lw,col] of [
+        [hh/12*Math.PI*2-Math.PI/2, cr*0.48, 3.5,'#3A2010'],
+        [mm/60*Math.PI*2-Math.PI/2, cr*0.68, 2.5,'#3A2010'],
+        [ss/60*Math.PI*2-Math.PI/2, cr*0.76, 1.2,'#CC3322'],
+      ]) {
+        ctx.strokeStyle=col; ctx.lineWidth=lw;
+        ctx.beginPath(); ctx.moveTo(ccx,ccy);
+        ctx.lineTo(ccx+Math.cos(ang)*len,ccy+Math.sin(ang)*len); ctx.stroke();
+      }
+      ctx.fillStyle='#3A2010'; ctx.beginPath(); ctx.arc(ccx,ccy,cr*0.05,0,Math.PI*2); ctx.fill();
+    }
+    // ── cork board (upper left) ───────────────────────────
+    { const MSGS=['오늘도\n수고했꼬잉 🐷','할 수\n있꼬잉 ✨','쉬어도\n괜찮꼬잉 💤','잘하고\n있꼬잉 🌸','집중\n모드꼬잉 📚'];
+      const bx=ox+W*0.08, by=H*0.06, bw=W*0.21, bh=H*0.24;
+      // board body
+      ctx.fillStyle='#C8905A'; ctx.strokeStyle='#8A6030'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,6); ctx.fill(); ctx.stroke();
+      // cork texture blobs
+      ctx.fillStyle='rgba(210,155,90,0.5)';
+      for (const [dx,dy,dr] of [[0.18,0.18,0.07],[0.62,0.28,0.055],[0.38,0.55,0.065],[0.72,0.68,0.075],[0.1,0.72,0.06]]) {
+        ctx.beginPath(); ctx.ellipse(bx+bw*dx,by+bh*dy,bw*dr,bw*dr*0.7,0,0,Math.PI*2); ctx.fill();
+      }
+      // wooden frame border
+      ctx.strokeStyle='#7A5020'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.roundRect(bx+3,by+3,bw-6,bh-6,4); ctx.stroke();
+      // main note (clickable message)
+      ctx.save(); ctx.translate(bx+bw*0.1,by+bh*0.08); ctx.rotate(-0.04);
+      ctx.fillStyle='#FFFDE0'; ctx.shadowColor='rgba(0,0,0,0.18)'; ctx.shadowBlur=5;
+      ctx.beginPath(); ctx.rect(0,0,bw*0.56,bh*0.44); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#DD3333'; ctx.beginPath(); ctx.arc(bw*0.28,0,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#554433'; ctx.font=`bold ${H*0.021}px sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      MSGS[corkMsgIdx].split('\n').forEach((ln,i)=>ctx.fillText(ln,bw*0.28,bh*0.13+i*H*0.028));
+      ctx.restore();
+      // deco note (fixed)
+      ctx.save(); ctx.translate(bx+bw*0.46,by+bh*0.48); ctx.rotate(0.07);
+      ctx.fillStyle='#FFD5E8'; ctx.shadowColor='rgba(0,0,0,0.13)'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.rect(0,0,bw*0.44,bh*0.32); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#CC4466'; ctx.beginPath(); ctx.arc(bw*0.22,0,3.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#774455'; ctx.font=`${H*0.028}px sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('🐷✨',bw*0.22,bh*0.16);
+      ctx.restore();
+    }
     // desk surface edge highlight + front panel
     ctx.fillStyle='rgba(220,175,90,0.3)';
     ctx.fillRect(ox,gy-H*0.01,W,H*0.01);

@@ -48,6 +48,8 @@ let ripples=[];        // [{x,y,t}] water ripple effects
 let sofaBounce=0;      // >0: sofa cushion bouncing (counts down)
 let laptopGlow=0;      // >0: laptop screen lit up (counts down)
 let lampOn=true;       // desk lamp on/off toggle
+let clockTick=0;       // >0: clock second hand spinning fast
+let corkMsgIdx=0;      // cork board current message index
 let curtainClose=0;    // 0=fully open, 30=fully closed (animation progress)
 let curtainTarget=0;   // 0=open, 30=closed
 let tulipBloom=0;      // 0=bud, 1-60=blooming, ≥60=full bloom

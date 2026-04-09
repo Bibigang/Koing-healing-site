@@ -66,6 +66,7 @@
   }
 
   starPulse++;
+  if (clockTick>0) clockTick--;
   if (curtainClose<curtainTarget) curtainClose=Math.min(30,curtainClose+1);
   else if (curtainClose>curtainTarget) curtainClose=Math.max(0,curtainClose-1);
 
