@@ -35,9 +35,11 @@ class Accessory {
     if (this.worn) { const p=this._wornPos(); hx=p.x; hy=p.y; }
     else if (this.dragging) { hx=this.x; hy=this.y; }
     else {
-      hx=this.panelX; hy=this.panelY-panelScroll;
+      if (panelSlide<0.5) return false;
+      const ox=panelOffsetX();
+      hx=this.panelX+ox; hy=this.panelY-panelScroll;
       const pw=Math.min(W*0.13,72);
-      if (mx<8||mx>8+pw||my<H*0.04||my>H*0.04+H*0.44) return false;
+      if (mx<8+ox||mx>8+ox+pw||my<H*0.04||my>H*0.04+H*0.44) return false;
     }
     const s=this.worn?this._wornS:this._panelS;
     return Math.hypot(mx-hx,my-hy)<s*0.85;

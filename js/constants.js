@@ -56,6 +56,9 @@ const SPRING_FLOWERS=[[0.1,0.64],[0.28,0.66],[0.55,0.63],[0.72,0.65],[0.88,0.62]
 // ── Panel scroll ──────────────────────────────────────────
 let panelScroll=0, panelMaxScroll=0;
 let panelDragging=false, panelDragStartY=0, panelScrollStart=0;
+let panelOpen=false;   // toggle
+let panelSlide=0;      // 0=hidden, 1=visible (animated)
+function panelOffsetX() { return (panelSlide-1)*(Math.min(W*0.13,72)+20); }
 function updatePanelMaxScroll() {
   const ph=H*0.44;
   const lastY=H*0.07+(accessories.length-1)*H*0.075+H*0.075;

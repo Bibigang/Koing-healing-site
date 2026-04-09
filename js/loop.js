@@ -81,13 +81,21 @@
   foods.forEach(f=>f.update());
   pig.update();
 
-  // Panel items (clipped + scrolled)
-  const pw=Math.min(W*0.13,72), ph=H*0.44;
-  ctx.save();
-  ctx.beginPath(); ctx.roundRect(8,H*0.04,pw,ph,18); ctx.clip();
-  ctx.translate(0,-panelScroll);
-  accessories.forEach(a=>{ if(!a.worn&&!a.dragging) a.draw(ctx); });
-  ctx.restore();
+  // Animate panel slide
+  const slideTarget=panelOpen?1:0;
+  if (panelSlide<slideTarget) panelSlide=Math.min(slideTarget,panelSlide+0.1);
+  else if (panelSlide>slideTarget) panelSlide=Math.max(slideTarget,panelSlide-0.1);
+
+  // Panel items (clipped + scrolled, only when visible)
+  if (panelSlide>0) {
+    const pw=Math.min(W*0.13,72), ph=H*0.44;
+    const ox=panelOffsetX();
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(8+ox,H*0.04,pw,ph,18); ctx.clip();
+    ctx.translate(ox,-panelScroll);
+    accessories.forEach(a=>{ if(!a.worn&&!a.dragging) a.draw(ctx); });
+    ctx.restore();
+  }
 
   foods.forEach(f=>{ if(f!==draggedFood) f.draw(ctx); });
   pig.draw(ctx);
