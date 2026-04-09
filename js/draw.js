@@ -11,9 +11,12 @@ function drawAccessoryPanel() {
   ctx.beginPath(); ctx.roundRect(8,8,bs,bs,10); ctx.fill(); ctx.stroke();
   // draw hanger icon
   ctx.strokeStyle='#CC6699'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round';
-  const hR=bs*0.13, hCX=hx+bs*0.03, hCY=hy-bs*0.32;
-  ctx.beginPath(); ctx.arc(hCX,hCY,hR,Math.PI*0.5,-Math.PI*0.25,true); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(hCX,hCY+hR); ctx.lineTo(hx,hy-bs*0.03); ctx.stroke();
+  // Hook: J-shape bezier — tip ends pointing downward
+  ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.25);
+  ctx.bezierCurveTo(hx,hy-bs*0.45, hx+bs*0.26,hy-bs*0.45, hx+bs*0.26,hy-bs*0.2); ctx.stroke();
+  // Neck
+  ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.25); ctx.lineTo(hx,hy-bs*0.03); ctx.stroke();
+  // Shoulders
   ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.03); ctx.quadraticCurveTo(hx-bs*0.15,hy+bs*0.03,hx-bs*0.26,hy+bs*0.2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.03); ctx.quadraticCurveTo(hx+bs*0.15,hy+bs*0.03,hx+bs*0.26,hy+bs*0.2); ctx.stroke();
   ctx.restore();
