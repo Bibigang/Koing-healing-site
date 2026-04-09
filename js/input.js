@@ -1,5 +1,6 @@
 // ── Input state ───────────────────────────────────────────
 let draggedFood=null, draggedAcc=null, lastPetX=null, draggedEar=-1;
+let pendingAcc=null, pendingDownX=0, pendingDownY=0;
 
 // ── Scene helpers ─────────────────────────────────────────
 function rebuildFoods(idx) {
@@ -116,7 +117,14 @@ function onDown(x,y) {
   const bs=34;
   if (x>=8&&x<=8+bs&&y>=8&&y<=8+bs) { panelOpen=!panelOpen; return; }
   if (handleSceneInteraction(x,y)) return;
-  for (const a of accessories) { if(a.hitTest(x,y)){draggedAcc=a;a.startDrag();return;} }
+  // Worn accessories → immediate grab
+  for (const a of accessories) { if(a.worn&&a.hitTest(x,y)){draggedAcc=a;a.startDrag();return;} }
+  // Panel accessories → pending (direction decides: vertical=scroll, other=grab)
+  for (const a of accessories) {
+    if (!a.worn&&!a.dragging&&a.hitTest(x,y)) {
+      pendingAcc=a; pendingDownX=x; pendingDownY=y; return;
+    }
+  }
   const pw=Math.min(W*0.13,72);
   const ox=panelOffsetX();
   if (panelSlide>0.5&&x<8+ox+pw&&x>8+ox&&y>H*0.09&&y<H*0.09+H*0.44) {
@@ -133,6 +141,22 @@ function onDown(x,y) {
 function onMove(x,y) {
   if (panelDragging) {
     panelScroll=Math.max(0,Math.min(panelMaxScroll,panelScrollStart-(y-panelDragStartY))); return;
+  }
+  // Resolve pending panel item based on drag direction
+  if (pendingAcc) {
+    const dx=x-pendingDownX, dy=y-pendingDownY;
+    if (Math.hypot(dx,dy)>10) {
+      if (Math.abs(dy)>Math.abs(dx)) {
+        // Vertical → scroll
+        panelDragging=true; panelDragStartY=pendingDownY; panelScrollStart=panelScroll;
+        panelScroll=Math.max(0,Math.min(panelMaxScroll,panelScrollStart-(y-pendingDownY)));
+      } else {
+        // Horizontal/diagonal → grab item
+        draggedAcc=pendingAcc; draggedAcc.startDrag(); draggedAcc.moveTo(x,y);
+      }
+      pendingAcc=null;
+    }
+    return;
   }
   checkPetting(x,y);
   swipeLiveX=x;
@@ -154,6 +178,7 @@ function onMove(x,y) {
 }
 
 function onUp(x,y) {
+  pendingAcc=null;
   if (panelDragging) { panelDragging=false; return; }
   if (draggedAcc)      { draggedAcc.endDrag(); draggedAcc=null; }
   else if (draggedEar>=0) { pig.endEarDrag(); draggedEar=-1; }
@@ -181,7 +206,7 @@ canvas.addEventListener('mousedown', e=>onDown(...getXY(e)));
 canvas.addEventListener('mousemove', e=>onMove(...getXY(e)));
 canvas.addEventListener('mouseup',   e=>onUp(...getXY(e)));
 canvas.addEventListener('mouseleave',()=>{
-  swipeStartX=null;
+  swipeStartX=null; pendingAcc=null;
   if (sceneOffsetPx!==0) sceneOffsetTarget=0;
   panelDragging=false;
   if(draggedAcc){draggedAcc.endDrag();draggedAcc=null;}
