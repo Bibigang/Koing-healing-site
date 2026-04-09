@@ -270,8 +270,20 @@ class Pig {
       }
     } else if (starEyeTimer>0) {
       starEyeTimer--;
-      ctx.fillStyle='#FFCC00';
-      for (const sign of [-1,1]) { _starShape(cx+sign*ex,ey,er*1.1); }
+      // blink: closed for 5 frames every 18 frames
+      const closed=(starEyeTimer%18)<5;
+      ctx.strokeStyle='#442233';
+      for (const sign of [-1,1]) {
+        const ex2=cx+sign*ex;
+        if (closed) {
+          // closed eye — horizontal line
+          ctx.beginPath(); ctx.moveTo(ex2-er,ey); ctx.lineTo(ex2+er,ey); ctx.stroke();
+        } else {
+          // open eye — normal dot
+          ctx.fillStyle='#442233'; ctx.beginPath(); ctx.arc(ex2,ey,er,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(ex2+er*0.3,ey-er*0.3,er*0.35,0,Math.PI*2); ctx.fill();
+        }
+      }
     } else if (rainTimer>0) {
       ctx.strokeStyle='#3366AA';
       for (const sign of [-1,1]) {

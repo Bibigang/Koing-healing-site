@@ -108,17 +108,30 @@ function drawSceneDecorations(scene,ox) {
     // full moon base
     ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fillStyle='#FFFFCC'; ctx.fill();
     if (moonWink>0) {
-      // draw face first (on full circle), then shadow covers the non-crescent part
-      // face is shifted left so it sits naturally on the crescent
+      // face sits on the crescent area (left side)
       const fx=mx-mr*0.2, fy=my;
-      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.11; ctx.lineCap='round';
+      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.10; ctx.lineCap='round';
+      // eyebrows
+      ctx.beginPath(); ctx.moveTo(fx-mr*0.33,fy-mr*0.28); ctx.lineTo(fx-mr*0.10,fy-mr*0.22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx+mr*0.10,fy-mr*0.25); ctx.lineTo(fx+mr*0.30,fy-mr*0.30); ctx.stroke();
       // left eye — wink (closed arc ∪)
       ctx.beginPath(); ctx.arc(fx-mr*0.2,fy-mr*0.1,mr*0.12,Math.PI,0); ctx.stroke();
       // right eye — dot
       ctx.beginPath(); ctx.arc(fx+mr*0.18,fy-mr*0.1,mr*0.07,0,Math.PI*2);
       ctx.fillStyle='#8A9060'; ctx.fill();
+      // nose (small bump)
+      ctx.strokeStyle='#8A9060'; ctx.lineWidth=mr*0.08;
+      ctx.beginPath(); ctx.arc(fx,fy+mr*0.06,mr*0.07,Math.PI,0); ctx.stroke();
+      // nostrils
+      ctx.fillStyle='#8A9060';
+      ctx.beginPath(); ctx.arc(fx-mr*0.06,fy+mr*0.08,mr*0.025,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(fx+mr*0.06,fy+mr*0.08,mr*0.025,0,Math.PI*2); ctx.fill();
       // smile
-      ctx.beginPath(); ctx.arc(fx,fy+mr*0.12,mr*0.2,0.25,Math.PI-0.25); ctx.stroke();
+      ctx.lineWidth=mr*0.10;
+      ctx.beginPath(); ctx.arc(fx,fy+mr*0.22,mr*0.18,0.25,Math.PI-0.25); ctx.stroke();
+      // cheek blush
+      ctx.fillStyle='rgba(255,180,150,0.35)';
+      ctx.beginPath(); ctx.ellipse(fx-mr*0.38,fy+mr*0.18,mr*0.13,mr*0.08,0,0,Math.PI*2); ctx.fill();
       moonWink--;
     }
     // shadow circle — creates crescent (covers right side, naturally hides any face drawn there)
