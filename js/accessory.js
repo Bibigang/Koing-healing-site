@@ -19,7 +19,6 @@ class Accessory {
     if (this.type==='scarf') return r*0.68;
     if (this.type==='bunny') return r*0.72;
     if (this.type==='bowtie') return r*0.44;
-    if (this.type==='cape') return r*0.95;
     return r*0.82;
   }
   _wornPos() {
@@ -33,7 +32,6 @@ class Accessory {
     if (this.type==='scarf') return {x:cx,y:cy+r*0.82};
     if (this.type==='bunny') return {x:cx,y:cy-r*0.92};
     if (this.type==='bowtie') return {x:cx,y:cy+r*0.68};
-    if (this.type==='cape') return {x:cx,y:cy};
     return {x:cx,y:cy-r*0.1};
   }
   hitTest(mx,my) {
@@ -76,7 +74,6 @@ class Accessory {
     else if (this.type==='scarf')         this._scarf(ctx,x,y,s);
     else if (this.type==='bunny')         this._bunny(ctx,x,y,s);
     else if (this.type==='bowtie')        this._bowtie(ctx,x,y,s);
-    else if (this.type==='cape')          this._cape(ctx,x,y,s);
     else                                  this._glasses(ctx,x,y,s);
   }
   _crown(ctx,x,y,s) {
@@ -184,25 +181,6 @@ class Accessory {
     }
     ctx.beginPath(); ctx.ellipse(x,y,s*0.10,s*0.14,0,0,Math.PI*2);
     ctx.fillStyle='#FF7755'; ctx.fill(); ctx.strokeStyle='#CC2200'; ctx.lineWidth=lw; ctx.stroke();
-    ctx.restore();
-  }
-  _cape(ctx,x,y,s) {
-    ctx.save();
-    const lw=Math.max(1.5,s*0.03);
-    ctx.beginPath();
-    ctx.moveTo(x-s*0.5,y-s*0.3);
-    ctx.bezierCurveTo(x-s*0.65,y+s*0.1,x-s*0.52,y+s*0.52,x-s*0.15,y+s*0.62);
-    ctx.lineTo(x+s*0.15,y+s*0.62);
-    ctx.bezierCurveTo(x+s*0.52,y+s*0.52,x+s*0.65,y+s*0.1,x+s*0.5,y-s*0.3);
-    ctx.quadraticCurveTo(x,y-s*0.4,x-s*0.5,y-s*0.3);
-    ctx.fillStyle='#7722DD'; ctx.fill(); ctx.strokeStyle='#5500BB'; ctx.lineWidth=lw; ctx.stroke();
-    // inner shine
-    ctx.beginPath(); ctx.moveTo(x-s*0.28,y-s*0.18);
-    ctx.bezierCurveTo(x-s*0.36,y+s*0.12,x-s*0.26,y+s*0.42,x,y+s*0.52);
-    ctx.strokeStyle='rgba(180,100,255,0.45)'; ctx.lineWidth=Math.max(1.5,s*0.04); ctx.stroke();
-    // clasp
-    ctx.beginPath(); ctx.arc(x,y-s*0.3,s*0.08,0,Math.PI*2);
-    ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#CC9900'; ctx.lineWidth=lw; ctx.stroke();
     ctx.restore();
   }
 }
