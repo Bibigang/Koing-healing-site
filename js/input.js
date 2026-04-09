@@ -116,7 +116,6 @@ function onDown(x,y) {
   // Hanger button toggle
   const bs=34;
   if (x>=8&&x<=8+bs&&y>=8&&y<=8+bs) { panelOpen=!panelOpen; return; }
-  if (handleSceneInteraction(x,y)) return;
   // Worn accessories → immediate grab
   for (const a of accessories) { if(a.worn&&a.hitTest(x,y)){draggedAcc=a;a.startDrag();return;} }
   // Panel accessories → pending (direction decides: vertical=scroll, other=grab)
@@ -130,6 +129,7 @@ function onDown(x,y) {
   if (panelSlide>0.5&&x<8+ox+pw&&x>8+ox&&y>H*0.09&&y<H*0.09+H*0.44) {
     panelDragging=true; panelDragStartY=y; panelScrollStart=panelScroll; return;
   }
+  if (handleSceneInteraction(x,y)) return;
   const eIdx=pig.earHitTest(x,y);
   if (eIdx>=0) { draggedEar=eIdx; pig.startEarDrag(eIdx); return; }
   for (const f of foods) { if(f.hitTest(x,y)){draggedFood=f;f.startDrag();return;} }
