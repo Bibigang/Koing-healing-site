@@ -339,7 +339,7 @@ function drawSceneDecorations(scene,ox) {
       ctx.fillStyle='#3A2010'; ctx.beginPath(); ctx.arc(ccx,ccy,cr*0.05,0,Math.PI*2); ctx.fill();
     }
     // ── cork board (upper left) ───────────────────────────
-    { const MSGS=['오늘도\n수고했꼬잉 🐷','할 수\n있꼬잉 ✨','쉬어도\n괜찮꼬잉 💤','잘하고\n있꼬잉 🌸','집중\n모드꼬잉 📚'];
+    { const MSGS=['커피는\n하루 한 잔만 ☕','물 자주\n마시기 💧','50분 공부\n10분 휴식 ⏰','스트레칭\n잊지 말기 🧘','일찍 자야\n잘 산다 🌙'];
       const bx=ox+W*0.08, by=H*0.06, bw=W*0.27, bh=H*0.24;
       // board body
       ctx.fillStyle='#C8905A'; ctx.strokeStyle='#8A6030'; ctx.lineWidth=2.5;
