@@ -493,6 +493,14 @@ function drawSceneDecorations(scene,ox) {
         ctx.fill();
       }
     }
+    // darkness overlay when lamp is off
+    if (!lampOn) {
+      ctx.save();
+      ctx.globalAlpha=0.55;
+      ctx.fillStyle='#1a1030';
+      ctx.fillRect(ox,0,W,H);
+      ctx.restore();
+    }
   }
 }
 
