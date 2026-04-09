@@ -359,30 +359,6 @@ function drawSceneDecorations(scene,ox) {
       ctx.fillStyle='rgba(0,0,0,0.12)';
       ctx.beginPath(); ctx.roundRect(lx+lw*0.04,ly-H*0.023,lw*0.92,H*0.004,1); ctx.fill();
     }
-    // coffee mug
-    { const mx=ox+W*0.585, my=gy, mw=W*0.052, mh=H*0.072;
-      // body
-      ctx.fillStyle='#E8D8C8'; ctx.strokeStyle='#C8A888'; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.roundRect(mx,my-mh,mw,mh,[7,7,4,4]); ctx.fill(); ctx.stroke();
-      // stripe decoration
-      ctx.fillStyle='rgba(150,90,70,0.4)';
-      ctx.beginPath(); ctx.roundRect(mx+mw*0.12,my-mh*0.62,mw*0.76,mh*0.28,2); ctx.fill();
-      // handle
-      ctx.strokeStyle='#C8A888'; ctx.lineWidth=2.5;
-      ctx.beginPath(); ctx.arc(mx+mw+mw*0.08,my-mh*0.44,mh*0.21,-0.65,0.65); ctx.stroke();
-      // rim / top
-      ctx.fillStyle='rgba(220,185,155,0.6)';
-      ctx.beginPath(); ctx.ellipse(mx+mw*0.5,my-mh,mw*0.5,mh*0.07,0,0,Math.PI*2); ctx.fill();
-      // steam
-      ctx.strokeStyle='rgba(210,190,170,0.5)'; ctx.lineWidth=1.8; ctx.lineCap='round';
-      for (const [dx,flip] of [[-mw*0.08,1],[mw*0.1,-1]]) {
-        ctx.beginPath();
-        ctx.moveTo(mx+mw*0.5+dx, my-mh-H*0.004);
-        ctx.bezierCurveTo(mx+mw*0.5+dx+flip*mw*0.12,my-mh-H*0.022,
-                          mx+mw*0.5+dx-flip*mw*0.12,my-mh-H*0.044,
-                          mx+mw*0.5+dx,my-mh-H*0.062); ctx.stroke();
-      }
-    }
     // desk lamp — long pole, shade over pig's head, on/off toggle
     { const bx=ox+W*0.73, sx=ox+W*0.60, sy=gy-H*0.30;
       if (lampOn) {
