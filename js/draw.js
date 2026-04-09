@@ -4,11 +4,18 @@ function drawAccessoryPanel() {
   const bs=34; // hanger button size
 
   // Hanger button — always visible
+  const hx=8+bs/2, hy=8+bs/2;
   ctx.save();
-  ctx.fillStyle='rgba(255,238,248,0.92)'; ctx.strokeStyle='rgba(255,175,210,0.75)'; ctx.lineWidth=1.5;
+  ctx.fillStyle=panelOpen?'rgba(255,200,230,0.95)':'rgba(255,238,248,0.92)';
+  ctx.strokeStyle='rgba(255,175,210,0.75)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.roundRect(8,8,bs,bs,10); ctx.fill(); ctx.stroke();
-  ctx.font=`${Math.round(bs*0.60)}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🪝',8+bs/2,8+bs/2+1);
+  // draw hanger icon
+  ctx.strokeStyle='#CC6699'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round';
+  const hR=bs*0.13, hCX=hx+bs*0.03, hCY=hy-bs*0.32;
+  ctx.beginPath(); ctx.arc(hCX,hCY,hR,Math.PI*0.5,-Math.PI*0.25,true); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hCX,hCY+hR); ctx.lineTo(hx,hy-bs*0.03); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.03); ctx.quadraticCurveTo(hx-bs*0.15,hy+bs*0.03,hx-bs*0.26,hy+bs*0.2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hx,hy-bs*0.03); ctx.quadraticCurveTo(hx+bs*0.15,hy+bs*0.03,hx+bs*0.26,hy+bs*0.2); ctx.stroke();
   ctx.restore();
 
   if (panelSlide<=0) return;
@@ -18,12 +25,12 @@ function drawAccessoryPanel() {
   ctx.save();
   ctx.translate(ox,0);
   ctx.fillStyle='rgba(255,238,248,0.92)'; ctx.strokeStyle='rgba(255,175,210,0.75)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.roundRect(8,H*0.04,pw,ph,18); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(8,H*0.09,pw,ph,18); ctx.fill(); ctx.stroke();
   if (panelMaxScroll>0) {
     const barH=Math.max(24,ph*ph/(ph+panelMaxScroll));
-    const barY=H*0.04+6+(ph-12-barH)*(panelScroll/panelMaxScroll);
+    const barY=H*0.09+6+(ph-12-barH)*(panelScroll/panelMaxScroll);
     ctx.fillStyle='rgba(220,160,200,0.22)';
-    ctx.beginPath(); ctx.roundRect(10,H*0.04+6,4,ph-12,4); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(10,H*0.09+6,4,ph-12,4); ctx.fill();
     ctx.fillStyle='rgba(200,100,170,0.7)';
     ctx.beginPath(); ctx.roundRect(10,barY,4,barH,4); ctx.fill();
     ctx.fillStyle='rgba(255,200,235,0.6)';

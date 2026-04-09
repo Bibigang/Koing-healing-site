@@ -117,7 +117,7 @@ function onDown(x,y) {
   for (const a of accessories) { if(a.hitTest(x,y)){draggedAcc=a;a.startDrag();return;} }
   const pw=Math.min(W*0.13,72);
   const ox=panelOffsetX();
-  if (panelSlide>0.5&&x<8+ox+pw&&x>8+ox&&y>H*0.04&&y<H*0.04+H*0.44) {
+  if (panelSlide>0.5&&x<8+ox+pw&&x>8+ox&&y>H*0.09&&y<H*0.09+H*0.44) {
     panelDragging=true; panelDragStartY=y; panelScrollStart=panelScroll; return;
   }
   const eIdx=pig.earHitTest(x,y);
@@ -192,7 +192,7 @@ canvas.addEventListener('touchmove', e=>{e.preventDefault();onMove(...getXY(e));
 canvas.addEventListener('touchend',  e=>{e.preventDefault();onUp(...getXY(e));},{passive:false});
 canvas.addEventListener('wheel',e=>{
   const pw=Math.min(W*0.13,72), ox=panelOffsetX();
-  if(panelSlide>0.5&&e.clientX<8+ox+pw&&e.clientX>8+ox&&e.clientY>H*0.04&&e.clientY<H*0.04+H*0.44){
+  if(panelSlide>0.5&&e.clientX<8+ox+pw&&e.clientX>8+ox&&e.clientY>H*0.09&&e.clientY<H*0.09+H*0.44){
     panelScroll=Math.max(0,Math.min(panelMaxScroll,panelScroll+e.deltaY*0.4));
     e.preventDefault();
   }

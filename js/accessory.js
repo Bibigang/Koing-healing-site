@@ -7,7 +7,7 @@ class Accessory {
   }
   _syncPanel() {
     const pw=Math.min(W*0.13,72);
-    this.panelX=8+pw/2; this.panelY=H*0.07+this.idx*H*0.075;
+    this.panelX=8+pw/2; this.panelY=H*0.12+this.idx*H*0.075;
     if (!this.worn&&!this.dragging) { this.x=this.panelX; this.y=this.panelY; }
   }
   get _panelS() { return Math.min(W*0.08,50); }
@@ -39,7 +39,7 @@ class Accessory {
       const ox=panelOffsetX();
       hx=this.panelX+ox; hy=this.panelY-panelScroll;
       const pw=Math.min(W*0.13,72);
-      if (mx<8+ox||mx>8+ox+pw||my<H*0.04||my>H*0.04+H*0.44) return false;
+      if (mx<8+ox||mx>8+ox+pw||my<H*0.09||my>H*0.09+H*0.44) return false;
     }
     const s=this.worn?this._wornS:this._panelS;
     return Math.hypot(mx-hx,my-hy)<s*0.85;

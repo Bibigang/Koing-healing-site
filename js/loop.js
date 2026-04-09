@@ -91,7 +91,7 @@
     const pw=Math.min(W*0.13,72), ph=H*0.44;
     const ox=panelOffsetX();
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(8+ox,H*0.04,pw,ph,18); ctx.clip();
+    ctx.beginPath(); ctx.roundRect(8+ox,H*0.09,pw,ph,18); ctx.clip();
     ctx.translate(ox,-panelScroll);
     accessories.forEach(a=>{ if(!a.worn&&!a.dragging) a.draw(ctx); });
     ctx.restore();
