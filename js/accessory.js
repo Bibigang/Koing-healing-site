@@ -166,8 +166,14 @@ class Accessory {
       ctx.ellipse(x+sx*s*0.28,y-s*0.35,s*0.06,s*0.20,tilt,0,Math.PI*2);
       ctx.fillStyle='#FF99BB'; ctx.fill();
     }
-    ctx.beginPath(); ctx.arc(x,y+s*0.05,s*0.45,Math.PI*1.1,Math.PI*1.9);
-    ctx.strokeStyle='#FFAACC'; ctx.lineWidth=Math.max(4,s*0.14); ctx.stroke();
+    ctx.strokeStyle='#FFAACC'; ctx.lineWidth=Math.max(4,s*0.14);
+    ctx.beginPath();
+    if (this.worn) {
+      ctx.arc(pig.cx, pig.cy, pig.r, Math.PI*1.25, Math.PI*1.75);
+    } else {
+      ctx.arc(x, y+s*0.05, s*0.45, Math.PI*1.1, Math.PI*1.9);
+    }
+    ctx.stroke();
     ctx.restore();
   }
   _bowtie(ctx,x,y,s) {
