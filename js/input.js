@@ -59,9 +59,10 @@ function handleSceneInteraction(x,y) {
     if (x>W*0.04&&x<W*0.32&&y>gy-H*0.2&&y<gy) { sofaBounce=40; return true; }
   } else if (sid==='study') {
     const gy=H*0.6;
-    // laptop screen area
     const lx=W*0.04, lw=W*0.24;
     if (x>lx&&x<lx+lw&&y>gy-H*0.167&&y<gy) { laptopGlow=90; return true; }
+    // lamp shade click → toggle on/off (shade at W*0.60, gy-H*0.30 ~ gy-H*0.225)
+    if (x>W*0.545&&x<W*0.655&&y>gy-H*0.31&&y<gy-H*0.21) { lampOn=!lampOn; return true; }
   } else if (sid==='night') {
     if (NIGHT_STARS.some(([rx,ry])=>Math.hypot(x-rx*W,y-ry*H)<H*0.028)) { starEyeTimer=90; return true; }
     const mx=W*0.82, my=H*0.1, mr=H*0.07;

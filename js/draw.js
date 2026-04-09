@@ -310,31 +310,6 @@ function drawSceneDecorations(scene,ox) {
     ctx.fillRect(ox,gy-H*0.01,W,H*0.01);
     ctx.fillStyle='rgba(55,30,5,0.22)';
     ctx.fillRect(ox,gy,W,H*0.007);
-    // wall frame / poster
-    { const px=ox+W*0.36, py=H*0.07, pw=W*0.13, ph=H*0.19;
-      ctx.fillStyle='#F8F2E8'; ctx.strokeStyle='#C8AE80'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.roundRect(px,py,pw,ph,4); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle='#B09060'; ctx.lineWidth=1.5;
-      // simple mountain sketch inside poster
-      ctx.fillStyle='#E0D5C0';
-      ctx.beginPath(); ctx.moveTo(px+pw*0.1,py+ph*0.85);
-      ctx.lineTo(px+pw*0.38,py+ph*0.38); ctx.lineTo(px+pw*0.55,py+ph*0.55);
-      ctx.lineTo(px+pw*0.72,py+ph*0.28); ctx.lineTo(px+pw*0.9,py+ph*0.85);
-      ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#C8D4E0';
-      ctx.beginPath(); ctx.arc(px+pw*0.22,py+ph*0.22,pw*0.14,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    }
-    // sticky notes on wall
-    for (const [dx,col,rot] of [
-      [0,'#FFEE88',0.04],[0.08,'#FFB5C8',-0.03],[0.155,'#B8E8A0',0.02]
-    ]) {
-      ctx.save(); ctx.globalAlpha=0.88;
-      ctx.translate(ox+W*0.55+dx*W, H*0.12);
-      ctx.rotate(rot);
-      ctx.fillStyle=col; ctx.shadowColor='rgba(0,0,0,0.1)'; ctx.shadowBlur=4;
-      ctx.beginPath(); ctx.rect(0,0,W*0.055,H*0.058); ctx.fill();
-      ctx.restore();
-    }
     // open laptop (left side)
     { const lx=ox+W*0.04, ly=gy, lw=W*0.24;
       // base / keyboard
@@ -408,39 +383,50 @@ function drawSceneDecorations(scene,ox) {
                           mx+mw*0.5+dx,my-mh-H*0.062); ctx.stroke();
       }
     }
-    // desk lamp (right side)
-    { const lx=ox+W*0.85, ly=gy, s=H*0.19;
-      // warm glow pool on desk
-      const glow=ctx.createRadialGradient(lx-s*0.22,ly-H*0.01,0,lx-s*0.22,ly-H*0.01,s*0.38);
-      glow.addColorStop(0,'rgba(255,210,100,0.2)'); glow.addColorStop(1,'rgba(255,190,60,0)');
-      ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(lx-s*0.22,ly-H*0.01,s*0.38,0,Math.PI*2); ctx.fill();
+    // desk lamp — long pole, shade over pig's head, on/off toggle
+    { const bx=ox+W*0.73, sx=ox+W*0.60, sy=gy-H*0.30;
+      if (lampOn) {
+        // light beam (downward cone)
+        ctx.save();
+        const beam=ctx.createLinearGradient(sx,sy+H*0.05,sx,gy);
+        beam.addColorStop(0,'rgba(255,220,100,0.22)'); beam.addColorStop(1,'rgba(255,200,80,0)');
+        ctx.fillStyle=beam;
+        ctx.beginPath();
+        ctx.moveTo(sx-W*0.022,sy+H*0.05);
+        ctx.lineTo(sx+W*0.022,sy+H*0.05);
+        ctx.lineTo(sx+W*0.075,gy-H*0.015);
+        ctx.lineTo(sx-W*0.075,gy-H*0.015);
+        ctx.closePath(); ctx.fill();
+        // glow pool on desk
+        const pool=ctx.createRadialGradient(sx,gy-H*0.01,0,sx,gy-H*0.01,W*0.1);
+        pool.addColorStop(0,'rgba(255,215,90,0.28)'); pool.addColorStop(1,'rgba(255,200,60,0)');
+        ctx.fillStyle=pool; ctx.beginPath(); ctx.arc(sx,gy-H*0.01,W*0.1,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
       // base disc
       ctx.fillStyle='#707480'; ctx.strokeStyle='#545660'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.ellipse(lx,ly-s*0.03,s*0.08,s*0.025,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      // pole
-      ctx.strokeStyle='#808490'; ctx.lineWidth=s*0.042; ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(lx,ly-s*0.05); ctx.lineTo(lx-s*0.05,ly-s*0.5); ctx.stroke();
-      // arm
-      ctx.beginPath(); ctx.moveTo(lx-s*0.05,ly-s*0.5); ctx.lineTo(lx-s*0.3,ly-s*0.58); ctx.stroke();
-      // shade (trapezoid)
-      ctx.fillStyle='#D4A828'; ctx.strokeStyle='#B48818'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(bx,gy-H*0.012,W*0.038,H*0.011,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      // long vertical pole
+      ctx.strokeStyle='#808490'; ctx.lineWidth=H*0.008; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(bx,gy-H*0.015); ctx.lineTo(bx,gy-H*0.40); ctx.stroke();
+      // arm from pole top to shade
+      ctx.beginPath(); ctx.moveTo(bx,gy-H*0.40); ctx.lineTo(sx,sy); ctx.stroke();
+      // shade (trapezoid, pointing downward)
+      const sw=W*0.052;
+      ctx.fillStyle=lampOn?'#D4A828':'#907020'; ctx.strokeStyle='#B48818'; ctx.lineWidth=1.5;
       ctx.beginPath();
-      ctx.moveTo(lx-s*0.3-s*0.07,ly-s*0.55);
-      ctx.lineTo(lx-s*0.3+s*0.07,ly-s*0.55);
-      ctx.lineTo(lx-s*0.3+s*0.15,ly-s*0.42);
-      ctx.lineTo(lx-s*0.3-s*0.15,ly-s*0.42);
+      ctx.moveTo(sx-sw*0.42,sy); ctx.lineTo(sx+sw*0.42,sy);
+      ctx.lineTo(sx+sw*0.78,sy+H*0.075); ctx.lineTo(sx-sw*0.78,sy+H*0.075);
       ctx.closePath(); ctx.fill(); ctx.stroke();
-      // shade inner highlight
-      ctx.fillStyle='rgba(255,235,140,0.38)';
-      ctx.beginPath();
-      ctx.moveTo(lx-s*0.3-s*0.045,ly-s*0.54);
-      ctx.lineTo(lx-s*0.3+s*0.045,ly-s*0.54);
-      ctx.lineTo(lx-s*0.3+s*0.09, ly-s*0.46);
-      ctx.lineTo(lx-s*0.3-s*0.09, ly-s*0.46);
-      ctx.closePath(); ctx.fill();
-      // bulb
-      ctx.fillStyle='#FFFACC';
-      ctx.beginPath(); ctx.arc(lx-s*0.3,ly-s*0.42,s*0.03,0,Math.PI*2); ctx.fill();
+      if (lampOn) {
+        ctx.fillStyle='rgba(255,240,150,0.55)';
+        ctx.beginPath();
+        ctx.moveTo(sx-sw*0.28,sy+H*0.006); ctx.lineTo(sx+sw*0.28,sy+H*0.006);
+        ctx.lineTo(sx+sw*0.55,sy+H*0.065); ctx.lineTo(sx-sw*0.55,sy+H*0.065);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#FFFACC';
+        ctx.beginPath(); ctx.arc(sx,sy+H*0.04,H*0.013,0,Math.PI*2); ctx.fill();
+      }
     }
     // mini plant pot (far right corner)
     { const px=ox+W*0.93, py=gy, pr=W*0.028;
