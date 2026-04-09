@@ -435,11 +435,16 @@ class Food {
     ctx.beginPath(); ctx.ellipse(0,s*0.46,s*0.30,s*0.055,0,0,Math.PI*2); ctx.fill();
 
     // ── bone stick (handle) ──
-    ctx.strokeStyle='#E8DDB0'; ctx.lineWidth=s*0.065; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(s*0.04,s*0.54); ctx.lineTo(s*0.06,s*0.14); ctx.stroke();
-    ctx.fillStyle='#EEE4BC'; ctx.strokeStyle='#C8B068'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.ellipse(s*0.04,s*0.55,s*0.095,s*0.058,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(s*0.06,s*0.14,s*0.068,s*0.042,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#E8DDB0'; ctx.lineWidth=s*0.11; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(s*0.04,s*0.50); ctx.lineTo(s*0.06,s*0.15); ctx.stroke();
+    // bottom knob (big)
+    ctx.fillStyle='#EEE4BC'; ctx.strokeStyle='#C0A858'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(s*0.04,s*0.52,s*0.15,s*0.09,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,240,0.45)';
+    ctx.beginPath(); ctx.ellipse(s*0.00,s*0.49,s*0.07,s*0.04,-0.3,0,Math.PI*2); ctx.fill();
+    // top knob (smaller, peeking from meat)
+    ctx.fillStyle='#EEE4BC'; ctx.strokeStyle='#C0A858'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(s*0.06,s*0.15,s*0.10,s*0.06,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
 
     // ── piece body — thick irregular chunk ──
     // dark outline
@@ -462,41 +467,6 @@ class Food {
     ctx.bezierCurveTo(-s*0.04, s*0.32, -s*0.18, s*0.28, -s*0.26, s*0.16);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // ── cross-section face (torn/cut side — top-left area) ──
-    ctx.save();
-    // clip to piece shape first
-    ctx.beginPath();
-    ctx.moveTo(-s*0.26, s*0.16);
-    ctx.bezierCurveTo(-s*0.34, s*0.02, -s*0.30,-s*0.20, -s*0.12,-s*0.33);
-    ctx.bezierCurveTo( s*0.02,-s*0.45,  s*0.26,-s*0.39,  s*0.30,-s*0.22);
-    ctx.bezierCurveTo( s*0.36,-s*0.05,  s*0.24, s*0.16,  s*0.08, s*0.24);
-    ctx.bezierCurveTo(-s*0.04, s*0.32, -s*0.18, s*0.28, -s*0.26, s*0.16);
-    ctx.closePath(); ctx.clip();
-    // juicy white meat area
-    ctx.fillStyle='#F5EBCF';
-    ctx.beginPath();
-    ctx.moveTo(-s*0.28,-s*0.10);
-    ctx.bezierCurveTo(-s*0.18,-s*0.30, s*0.08,-s*0.36, s*0.18,-s*0.20);
-    ctx.bezierCurveTo( s*0.10,-s*0.06, -s*0.04, s*0.04, -s*0.20, s*0.02);
-    ctx.closePath(); ctx.fill();
-    // meat inner shadow (edge)
-    ctx.strokeStyle='rgba(180,120,60,0.5)'; ctx.lineWidth=s*0.04;
-    ctx.beginPath();
-    ctx.moveTo(-s*0.28,-s*0.10);
-    ctx.bezierCurveTo(-s*0.18,-s*0.30, s*0.08,-s*0.36, s*0.18,-s*0.20);
-    ctx.bezierCurveTo( s*0.10,-s*0.06, -s*0.04, s*0.04, -s*0.20, s*0.02);
-    ctx.closePath(); ctx.stroke();
-    // bone cross-section (circle)
-    ctx.fillStyle='#EDE4BE'; ctx.strokeStyle='#C0A860'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.arc(-s*0.06,-s*0.14,s*0.055,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#D4C898';
-    ctx.beginPath(); ctx.arc(-s*0.06,-s*0.14,s*0.028,0,Math.PI*2); ctx.fill();
-    // juices / moisture dots
-    ctx.fillStyle='rgba(240,210,150,0.55)';
-    for (const [dx,dy,r] of [[s*0.04,-s*0.08,s*0.022],[-s*0.14,-s*0.18,s*0.018],[s*0.10,-s*0.22,s*0.016]]) {
-      ctx.beginPath(); ctx.arc(dx,dy,r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
 
     // ── crispy bumps on crust ──
     for (const [dx,dy,r,c] of [

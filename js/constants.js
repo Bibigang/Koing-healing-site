@@ -64,7 +64,7 @@ let panelSlide=0;      // 0=hidden, 1=visible (animated)
 function panelOffsetX() { return (panelSlide-1)*(Math.min(W*0.13,72)+20); }
 function updatePanelMaxScroll() {
   const ph=H*0.44;
-  const lastY=H*0.12+(accessories.length-1)*H*0.075+H*0.075;
+  const lastY=H*0.12+(accessories.length-1)*H*0.09+H*0.09;
   panelMaxScroll=Math.max(0,lastY-H*0.09-ph);
   panelScroll=Math.min(panelScroll,panelMaxScroll);
 }

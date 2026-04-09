@@ -7,7 +7,7 @@ class Accessory {
   }
   _syncPanel() {
     const pw=Math.min(W*0.13,72);
-    this.panelX=8+pw/2; this.panelY=H*0.12+this.idx*H*0.075;
+    this.panelX=8+pw/2; this.panelY=H*0.12+this.idx*H*0.09;
     if (!this.worn&&!this.dragging) { this.x=this.panelX; this.y=this.panelY; }
   }
   get _panelS() { return Math.min(W*0.08,50); }
@@ -19,6 +19,7 @@ class Accessory {
     if (this.type==='scarf') return r*0.68;
     if (this.type==='bunny') return r*0.72;
     if (this.type==='bowtie') return r*0.44;
+    if (this.type==='umbrella_band') return r*0.72;
     return r*0.82;
   }
   _wornPos() {
@@ -32,6 +33,7 @@ class Accessory {
     if (this.type==='scarf') return {x:cx,y:cy+r*0.82};
     if (this.type==='bunny') return {x:cx,y:cy-r*0.92};
     if (this.type==='bowtie') return {x:cx,y:cy+r*0.68};
+    if (this.type==='umbrella_band') return {x:cx,y:cy-r*0.92};
     return {x:cx,y:cy-r*0.1};
   }
   hitTest(mx,my) {
@@ -74,6 +76,7 @@ class Accessory {
     else if (this.type==='scarf')         this._scarf(ctx,x,y,s);
     else if (this.type==='bunny')         this._bunny(ctx,x,y,s);
     else if (this.type==='bowtie')        this._bowtie(ctx,x,y,s);
+    else if (this.type==='umbrella_band') this._umbrella_band(ctx,x,y,s);
     else                                  this._glasses(ctx,x,y,s);
   }
   _crown(ctx,x,y,s) {
@@ -187,6 +190,44 @@ class Accessory {
     }
     ctx.beginPath(); ctx.ellipse(x,y,s*0.10,s*0.14,0,0,Math.PI*2);
     ctx.fillStyle='#FF7755'; ctx.fill(); ctx.strokeStyle='#CC2200'; ctx.lineWidth=lw; ctx.stroke();
+    ctx.restore();
+  }
+  _umbrella_band(ctx,x,y,s) {
+    ctx.save();
+    const ux=x, uy=y-s*0.52, cr=s*0.38;
+    const cols=['#FF6699','#FF9944','#FFDD22','#66CC44','#44AAEE','#9966DD'];
+    // canopy sections
+    for (let i=0;i<6;i++) {
+      const a1=Math.PI+(i/6)*Math.PI, a2=Math.PI+((i+1)/6)*Math.PI;
+      ctx.fillStyle=cols[i];
+      ctx.beginPath(); ctx.moveTo(ux,uy); ctx.arc(ux,uy,cr,a1,a2); ctx.closePath(); ctx.fill();
+    }
+    // rib lines
+    ctx.strokeStyle='rgba(255,255,255,0.42)'; ctx.lineWidth=1.2;
+    for (let i=1;i<6;i++) {
+      const a=Math.PI+(i/6)*Math.PI;
+      ctx.beginPath(); ctx.moveTo(ux,uy); ctx.lineTo(ux+Math.cos(a)*cr,uy+Math.sin(a)*cr); ctx.stroke();
+    }
+    // canopy border
+    ctx.strokeStyle='rgba(60,30,0,0.22)'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.arc(ux,uy,cr,Math.PI,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ux-cr,uy); ctx.lineTo(ux+cr,uy); ctx.stroke();
+    // hem scallops
+    for (let i=0;i<6;i++) {
+      const a=Math.PI+(i+0.5)/6*Math.PI;
+      ctx.fillStyle=cols[i];
+      ctx.beginPath(); ctx.arc(ux+Math.cos(a)*cr,uy+Math.sin(a)*cr,cr*0.12,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(60,30,0,0.18)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    // handle stick
+    ctx.strokeStyle='#7A5530'; ctx.lineWidth=Math.max(2.5,s*0.04); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(ux,uy); ctx.lineTo(ux,y-s*0.02); ctx.stroke();
+    // headband arc
+    ctx.strokeStyle='#FFAACC'; ctx.lineWidth=Math.max(4,s*0.13); ctx.lineCap='round';
+    ctx.beginPath();
+    if (this.worn) { ctx.arc(pig.cx,pig.cy,pig.r,Math.PI*1.25,Math.PI*1.75); }
+    else           { ctx.arc(x,y+s*0.05,s*0.45,Math.PI*1.1,Math.PI*1.9); }
+    ctx.stroke();
     ctx.restore();
   }
 }
