@@ -308,9 +308,9 @@ function drawSceneDecorations(scene,ox) {
     // ── wall clock (upper right) ──────────────────────────
     { const ccx=ox+W*0.84, ccy=H*0.15, cr=Math.min(W*0.062,H*0.072);
       // outer ring
-      ctx.fillStyle='#F5EFE0'; ctx.strokeStyle='#A88860'; ctx.lineWidth=3;
+      ctx.fillStyle='#F5EFE0'; ctx.strokeStyle='#FF6688'; ctx.lineWidth=4;
       ctx.beginPath(); ctx.arc(ccx,ccy,cr,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle='#C8AE80'; ctx.lineWidth=1;
+      ctx.strokeStyle='#FFAABB'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(ccx,ccy,cr*0.9,0,Math.PI*2); ctx.stroke();
       // hour marks
       for (let i=0;i<12;i++) {
@@ -340,7 +340,7 @@ function drawSceneDecorations(scene,ox) {
     }
     // ── cork board (upper left) ───────────────────────────
     { const MSGS=['오늘도\n수고했꼬잉 🐷','할 수\n있꼬잉 ✨','쉬어도\n괜찮꼬잉 💤','잘하고\n있꼬잉 🌸','집중\n모드꼬잉 📚'];
-      const bx=ox+W*0.08, by=H*0.06, bw=W*0.21, bh=H*0.24;
+      const bx=ox+W*0.08, by=H*0.06, bw=W*0.27, bh=H*0.24;
       // board body
       ctx.fillStyle='#C8905A'; ctx.strokeStyle='#8A6030'; ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,6); ctx.fill(); ctx.stroke();
@@ -353,22 +353,23 @@ function drawSceneDecorations(scene,ox) {
       ctx.strokeStyle='#7A5020'; ctx.lineWidth=3;
       ctx.beginPath(); ctx.roundRect(bx+3,by+3,bw-6,bh-6,4); ctx.stroke();
       // main note (clickable message)
-      ctx.save(); ctx.translate(bx+bw*0.1,by+bh*0.08); ctx.rotate(-0.04);
+      const nw=bw*0.58, nh=bh*0.46;
+      ctx.save(); ctx.translate(bx+bw*0.08,by+bh*0.08); ctx.rotate(-0.04);
       ctx.fillStyle='#FFFDE0'; ctx.shadowColor='rgba(0,0,0,0.18)'; ctx.shadowBlur=5;
-      ctx.beginPath(); ctx.rect(0,0,bw*0.56,bh*0.44); ctx.fill(); ctx.shadowBlur=0;
-      ctx.fillStyle='#DD3333'; ctx.beginPath(); ctx.arc(bw*0.28,0,4,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#554433'; ctx.font=`bold ${H*0.021}px sans-serif`;
+      ctx.beginPath(); ctx.rect(0,0,nw,nh); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#DD3333'; ctx.beginPath(); ctx.arc(nw*0.5,0,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#554433'; ctx.font=`bold ${H*0.017}px sans-serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      MSGS[corkMsgIdx].split('\n').forEach((ln,i)=>ctx.fillText(ln,bw*0.28,bh*0.13+i*H*0.028));
+      MSGS[corkMsgIdx].split('\n').forEach((ln,i)=>ctx.fillText(ln,nw*0.5,nh*0.32+i*H*0.024));
       ctx.restore();
       // deco note (fixed)
-      ctx.save(); ctx.translate(bx+bw*0.46,by+bh*0.48); ctx.rotate(0.07);
+      ctx.save(); ctx.translate(bx+bw*0.48,by+bh*0.46); ctx.rotate(0.07);
       ctx.fillStyle='#FFD5E8'; ctx.shadowColor='rgba(0,0,0,0.13)'; ctx.shadowBlur=4;
-      ctx.beginPath(); ctx.rect(0,0,bw*0.44,bh*0.32); ctx.fill(); ctx.shadowBlur=0;
-      ctx.fillStyle='#CC4466'; ctx.beginPath(); ctx.arc(bw*0.22,0,3.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.rect(0,0,bw*0.42,bh*0.32); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#CC4466'; ctx.beginPath(); ctx.arc(bw*0.21,0,3.5,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#774455'; ctx.font=`${H*0.028}px sans-serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('🐷✨',bw*0.22,bh*0.16);
+      ctx.fillText('🐷✨',bw*0.21,bh*0.16);
       ctx.restore();
     }
     // desk surface edge highlight + front panel
