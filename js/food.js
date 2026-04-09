@@ -40,6 +40,7 @@ class Food {
       ramen:      ()=>this._drawRamen(ctx,x,y,s),
       pajeon:     ()=>this._drawPajeon(ctx,x,y,s),
       samgyeopsal:()=>this._drawSamgyeopsal(ctx,x,y,s),
+      makgeolli:  ()=>this._drawMakgeolli(ctx,x,y,s),
     };
     (m[this.type]||m.flower)();
   }
@@ -426,41 +427,101 @@ class Food {
   }
 
   _drawChicken(ctx,x,y,s) {
-    // bone stick
-    ctx.strokeStyle='#E8D8A8'; ctx.lineWidth=s*0.065; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x+s*0.08,y+s*0.54); ctx.lineTo(x+s*0.1,y+s*0.08); ctx.stroke();
-    // bone knob bottom
-    ctx.fillStyle='#EEE0B8'; ctx.strokeStyle='#C8B880'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.ellipse(x+s*0.08,y+s*0.54,s*0.09,s*0.055,0.2,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // bone knob top (smaller, peeking from meat)
-    ctx.beginPath(); ctx.ellipse(x+s*0.1,y+s*0.08,s*0.065,s*0.04,0.1,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // meat body shadow layer
-    ctx.fillStyle='#8C3808';
-    ctx.beginPath(); ctx.ellipse(x-s*0.04,y-s*0.06,s*0.33,s*0.4,0.18,0,Math.PI*2); ctx.fill();
-    // main crust (dark golden brown)
-    ctx.fillStyle='#C46014'; ctx.strokeStyle='#8C3808'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.ellipse(x-s*0.06,y-s*0.08,s*0.31,s*0.38,0.18,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    // mid crust layer (golden)
-    ctx.fillStyle='#DC8020';
-    ctx.beginPath(); ctx.ellipse(x-s*0.07,y-s*0.1,s*0.28,s*0.34,0.18,0,Math.PI*2); ctx.fill();
-    // crispy bumps — dark shadow bumps first
-    ctx.fillStyle='#A84C10';
-    for (const [dx,dy,r] of [[-s*0.18,-s*0.25,s*0.09],[s*0.06,-s*0.3,s*0.08],[-s*0.26,-s*0.02,s*0.07],[s*0.1,-s*0.06,s*0.08],[-s*0.04,s*0.14,s*0.07],[-s*0.22,s*0.1,s*0.07]])
-      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
-    // crispy bumps — highlight bumps on top
-    ctx.fillStyle='#F0A030';
-    for (const [dx,dy,r] of [[-s*0.16,-s*0.26,s*0.07],[s*0.08,-s*0.28,s*0.065],[-s*0.24,-s*0.04,s*0.055],[s*0.12,-s*0.08,s*0.065],[-s*0.02,s*0.12,s*0.055],[-s*0.2,s*0.08,s*0.055]])
-      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
-    // light crispy tips
-    ctx.fillStyle='#F8C860';
-    for (const [dx,dy,r] of [[-s*0.15,-s*0.27,s*0.04],[s*0.09,-s*0.3,s*0.035],[-s*0.01,s*0.13,s*0.032]])
-      { ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill(); }
-    // oil sheen highlight
-    ctx.fillStyle='rgba(255,240,180,0.38)';
-    ctx.beginPath(); ctx.ellipse(x-s*0.16,y-s*0.26,s*0.09,s*0.055,-0.5,0,Math.PI*2); ctx.fill();
-    // white meat peek at top near bone
-    ctx.fillStyle='rgba(255,245,225,0.55)';
-    ctx.beginPath(); ctx.ellipse(x+s*0.06,y+s*0.06,s*0.07,s*0.04,0.1,0,Math.PI*2); ctx.fill();
+    ctx.save();
+    // bone handle
+    ctx.strokeStyle='#EDE0B8'; ctx.lineWidth=s*0.07; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x,y+s*0.58); ctx.lineTo(x+s*0.04,y+s*0.10); ctx.stroke();
+    // bone knobs
+    ctx.fillStyle='#EEE3C0'; ctx.strokeStyle='#C8B070'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.58,s*0.10,s*0.06,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x+s*0.04,y+s*0.10,s*0.07,s*0.045,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    // dark outline / shadow
+    ctx.fillStyle='#7A2800';
+    ctx.beginPath(); ctx.ellipse(x-s*0.06,y-s*0.14,s*0.32,s*0.36,0.12,0,Math.PI*2); ctx.fill();
+    // main crust — radial gradient (golden center, dark edge)
+    const g=ctx.createRadialGradient(x-s*0.12,y-s*0.28,s*0.04,x-s*0.06,y-s*0.14,s*0.33);
+    g.addColorStop(0,'#F8C040'); g.addColorStop(0.55,'#D07018'); g.addColorStop(1,'#8C3408');
+    ctx.beginPath(); ctx.ellipse(x-s*0.07,y-s*0.16,s*0.29,s*0.33,0.12,0,Math.PI*2);
+    ctx.fillStyle=g; ctx.fill();
+    // crispy bump shadows
+    for (const [dx,dy,r] of [[-s*0.14,-s*0.34,s*0.085],[s*0.08,-s*0.32,s*0.075],[-s*0.24,-s*0.07,s*0.07],[s*0.10,-s*0.05,s*0.075],[-s*0.06,s*0.12,s*0.065],[-s*0.24,s*0.08,s*0.065]]) {
+      ctx.fillStyle='#B04010'; ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
+    }
+    // crispy bump highlights
+    for (const [dx,dy,r] of [[-s*0.14,-s*0.35,s*0.065],[s*0.09,-s*0.33,s*0.06],[-s*0.24,-s*0.08,s*0.052],[s*0.11,-s*0.06,s*0.06],[-s*0.06,s*0.11,s*0.05],[-s*0.23,s*0.07,s*0.05]]) {
+      ctx.fillStyle='#F0B030'; ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
+    }
+    // golden tips
+    for (const [dx,dy,r] of [[-s*0.13,-s*0.36,s*0.038],[s*0.10,-s*0.34,s*0.032],[-s*0.05,s*0.10,s*0.028]]) {
+      ctx.fillStyle='#FFE060'; ctx.beginPath(); ctx.arc(x+dx,y+dy,r,0,Math.PI*2); ctx.fill();
+    }
+    // oil sheen
+    ctx.fillStyle='rgba(255,240,160,0.35)';
+    ctx.beginPath(); ctx.ellipse(x-s*0.17,y-s*0.33,s*0.10,s*0.055,-0.45,0,Math.PI*2); ctx.fill();
+    // white meat at top near bone
+    ctx.fillStyle='rgba(255,248,228,0.5)';
+    ctx.beginPath(); ctx.ellipse(x+s*0.04,y+s*0.08,s*0.06,s*0.036,0.1,0,Math.PI*2); ctx.fill();
+    // cute face (eyes + smile)
+    ctx.fillStyle='#5A2000';
+    ctx.beginPath(); ctx.arc(x-s*0.16,y-s*0.20,s*0.025,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s*0.02,y-s*0.26,s*0.025,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#5A2000'; ctx.lineWidth=s*0.028; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(x-s*0.08,y-s*0.14,s*0.06,0.2,Math.PI-0.2); ctx.stroke();
+    ctx.restore();
+  }
+
+  _drawMakgeolli(ctx,x,y,s) {
+    ctx.save();
+    // bowl shadow
+    ctx.fillStyle='rgba(100,80,50,0.18)';
+    ctx.beginPath(); ctx.ellipse(x,y+s*0.22,s*0.42,s*0.07,0,0,Math.PI*2); ctx.fill();
+    // bowl outer shape (사발 — wide, shallow)
+    const bTop=y-s*0.10, bBot=y+s*0.20, bTw=s*0.40, bBw=s*0.28;
+    ctx.beginPath();
+    ctx.moveTo(x-bTw,bTop);
+    ctx.quadraticCurveTo(x-bTw*1.04,bBot-s*0.04,x-bBw,bBot);
+    ctx.lineTo(x+bBw,bBot);
+    ctx.quadraticCurveTo(x+bTw*1.04,bBot-s*0.04,x+bTw,bTop);
+    ctx.closePath();
+    ctx.fillStyle='#D8C8A8'; ctx.fill(); ctx.strokeStyle='#A89068'; ctx.lineWidth=2; ctx.stroke();
+    // milky white liquid fill
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x-bTw,bTop);
+    ctx.quadraticCurveTo(x-bTw*1.04,bBot-s*0.04,x-bBw,bBot);
+    ctx.lineTo(x+bBw,bBot);
+    ctx.quadraticCurveTo(x+bTw*1.04,bBot-s*0.04,x+bTw,bTop);
+    ctx.closePath(); ctx.clip();
+    ctx.fillStyle='#F4EDDF'; ctx.fillRect(x-bTw*1.1,bTop,bTw*2.2,(bBot-bTop));
+    ctx.restore();
+    // liquid surface ellipse
+    ctx.beginPath(); ctx.ellipse(x,bTop,bTw,s*0.065,0,0,Math.PI*2);
+    ctx.fillStyle='#F8F2E6'; ctx.fill();
+    ctx.strokeStyle='rgba(190,170,130,0.45)'; ctx.lineWidth=1.2; ctx.stroke();
+    // bubbles on surface
+    ctx.fillStyle='rgba(255,255,255,0.88)';
+    for (const [dx,dy,r] of [[-bTw*0.5,s*0.015,s*0.038],[bTw*0.28,-s*0.01,s*0.028],[bTw*0.55,s*0.008,s*0.022],[-bTw*0.18,-s*0.005,s*0.018],[bTw*0.08,s*0.02,s*0.015]]) {
+      ctx.beginPath(); ctx.arc(x+dx,bTop+dy,r,0,Math.PI*2); ctx.fill();
+    }
+    // bowl rim highlight
+    ctx.fillStyle='rgba(255,255,255,0.28)';
+    ctx.beginPath(); ctx.ellipse(x-bTw*0.3,bTop+s*0.03,bTw*0.18,s*0.028,-0.2,0,Math.PI*2); ctx.fill();
+    // bowl inner side shadow
+    ctx.fillStyle='rgba(120,90,50,0.12)';
+    ctx.beginPath(); ctx.roundRect(x-bTw,bTop,bTw*0.12,bBot-bTop,4); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(x+bTw*0.88,bTop,bTw*0.12,bBot-bTop,4); ctx.fill();
+    // label stripe (classic makgeolli look)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x-bTw,bTop);
+    ctx.quadraticCurveTo(x-bTw*1.04,bBot-s*0.04,x-bBw,bBot);
+    ctx.lineTo(x+bBw,bBot);
+    ctx.quadraticCurveTo(x+bTw*1.04,bBot-s*0.04,x+bTw,bTop);
+    ctx.closePath(); ctx.clip();
+    ctx.fillStyle='rgba(180,100,50,0.13)';
+    ctx.fillRect(x-bTw*1.1,bTop+(bBot-bTop)*0.55,bTw*2.2,(bBot-bTop)*0.2);
+    ctx.restore();
+    ctx.restore();
   }
 
   _drawTteokbokki(ctx,x,y,s) {

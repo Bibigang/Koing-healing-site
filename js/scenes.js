@@ -30,7 +30,7 @@ const SCENES = [
     sky:['#6A8A9A','#8AAABB'], ground:['#527830','#325018'], groundY:0.6,
     shadowColor:'rgba(20,50,0,0.22)',
     cloudFill:'rgba(160,175,185,0.95)', cloudShadow:'rgba(60,90,120,0.25)',
-    items: [{type:'cocoa',rx:0.18,ry:0.78},{type:'pajeon',rx:0.5,ry:0.82},{type:'samgyeopsal',rx:0.82,ry:0.78}],
+    items: [{type:'makgeolli',rx:0.18,ry:0.78},{type:'pajeon',rx:0.5,ry:0.82},{type:'samgyeopsal',rx:0.82,ry:0.78}],
   },
   {
     id:'cozy', label:'아늑한 방',
