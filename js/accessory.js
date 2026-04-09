@@ -17,6 +17,9 @@ class Accessory {
     if (this.type==='ribbon'||this.type==='ribbon_purple') return r*0.42;
     if (this.type==='beanie') return r*0.65;
     if (this.type==='scarf') return r*0.68;
+    if (this.type==='bunny') return r*0.72;
+    if (this.type==='bowtie') return r*0.44;
+    if (this.type==='cape') return r*0.95;
     return r*0.82;
   }
   _wornPos() {
@@ -28,6 +31,9 @@ class Accessory {
     }
     if (this.type==='beanie') return {x:cx,y:cy-r*1.02};
     if (this.type==='scarf') return {x:cx,y:cy+r*0.82};
+    if (this.type==='bunny') return {x:cx,y:cy-r*0.92};
+    if (this.type==='bowtie') return {x:cx,y:cy+r*0.68};
+    if (this.type==='cape') return {x:cx,y:cy};
     return {x:cx,y:cy-r*0.1};
   }
   hitTest(mx,my) {
@@ -68,6 +74,9 @@ class Accessory {
     else if (this.type==='ribbon_purple') this._ribbon(ctx,x,y,s,'#9933CC','#6611AA','#BB55EE');
     else if (this.type==='beanie')        this._beanie(ctx,x,y,s);
     else if (this.type==='scarf')         this._scarf(ctx,x,y,s);
+    else if (this.type==='bunny')         this._bunny(ctx,x,y,s);
+    else if (this.type==='bowtie')        this._bowtie(ctx,x,y,s);
+    else if (this.type==='cape')          this._cape(ctx,x,y,s);
     else                                  this._glasses(ctx,x,y,s);
   }
   _crown(ctx,x,y,s) {
@@ -147,6 +156,53 @@ class Accessory {
       ctx.fillRect(x+i*s*0.10-s*0.03,y-s*0.2,s*0.06,s*0.4);
     }
     ctx.restore();
+    ctx.restore();
+  }
+  _bunny(ctx,x,y,s) {
+    ctx.save();
+    const lw=Math.max(1.5,s*0.04);
+    for (const [sx,tilt] of [[-1,-0.12],[1,0.12]]) {
+      ctx.beginPath();
+      ctx.ellipse(x+sx*s*0.28,y-s*0.35,s*0.11,s*0.33,tilt,0,Math.PI*2);
+      ctx.fillStyle='#FFDDE8'; ctx.fill(); ctx.strokeStyle='#DDAACC'; ctx.lineWidth=lw; ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(x+sx*s*0.28,y-s*0.35,s*0.06,s*0.20,tilt,0,Math.PI*2);
+      ctx.fillStyle='#FF99BB'; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x,y+s*0.05,s*0.45,Math.PI*1.1,Math.PI*1.9);
+    ctx.strokeStyle='#FFAACC'; ctx.lineWidth=Math.max(4,s*0.14); ctx.stroke();
+    ctx.restore();
+  }
+  _bowtie(ctx,x,y,s) {
+    ctx.save();
+    const lw=Math.max(1.5,s*0.05);
+    for (const sign of [-1,1]) {
+      ctx.beginPath(); ctx.moveTo(x,y);
+      ctx.bezierCurveTo(x+sign*s*0.12,y-s*0.30,x+sign*s*0.48,y-s*0.18,x+sign*s*0.42,y);
+      ctx.bezierCurveTo(x+sign*s*0.48,y+s*0.18,x+sign*s*0.12,y+s*0.30,x,y);
+      ctx.fillStyle='#FF5533'; ctx.fill(); ctx.strokeStyle='#CC2200'; ctx.lineWidth=lw; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.ellipse(x,y,s*0.10,s*0.14,0,0,Math.PI*2);
+    ctx.fillStyle='#FF7755'; ctx.fill(); ctx.strokeStyle='#CC2200'; ctx.lineWidth=lw; ctx.stroke();
+    ctx.restore();
+  }
+  _cape(ctx,x,y,s) {
+    ctx.save();
+    const lw=Math.max(1.5,s*0.03);
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.5,y-s*0.3);
+    ctx.bezierCurveTo(x-s*0.65,y+s*0.1,x-s*0.52,y+s*0.52,x-s*0.15,y+s*0.62);
+    ctx.lineTo(x+s*0.15,y+s*0.62);
+    ctx.bezierCurveTo(x+s*0.52,y+s*0.52,x+s*0.65,y+s*0.1,x+s*0.5,y-s*0.3);
+    ctx.quadraticCurveTo(x,y-s*0.4,x-s*0.5,y-s*0.3);
+    ctx.fillStyle='#7722DD'; ctx.fill(); ctx.strokeStyle='#5500BB'; ctx.lineWidth=lw; ctx.stroke();
+    // inner shine
+    ctx.beginPath(); ctx.moveTo(x-s*0.28,y-s*0.18);
+    ctx.bezierCurveTo(x-s*0.36,y+s*0.12,x-s*0.26,y+s*0.42,x,y+s*0.52);
+    ctx.strokeStyle='rgba(180,100,255,0.45)'; ctx.lineWidth=Math.max(1.5,s*0.04); ctx.stroke();
+    // clasp
+    ctx.beginPath(); ctx.arc(x,y-s*0.3,s*0.08,0,Math.PI*2);
+    ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#CC9900'; ctx.lineWidth=lw; ctx.stroke();
     ctx.restore();
   }
 }

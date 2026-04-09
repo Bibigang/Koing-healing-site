@@ -98,8 +98,9 @@
   }
 
   foods.forEach(f=>{ if(f!==draggedFood) f.draw(ctx); });
+  accessories.forEach(a=>{ if(a.worn&&!a.dragging&&a.type==='cape') a.draw(ctx); });
   pig.draw(ctx);
-  accessories.forEach(a=>{ if(a.worn&&!a.dragging) a.draw(ctx); });
+  accessories.forEach(a=>{ if(a.worn&&!a.dragging&&a.type!=='cape') a.draw(ctx); });
   if(draggedFood) draggedFood.draw(ctx);
   if(draggedAcc)  draggedAcc.draw(ctx);
 

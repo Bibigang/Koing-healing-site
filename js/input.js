@@ -93,6 +93,9 @@ const accessories=[
   new Accessory('glasses',      3),
   new Accessory('beanie',       4),
   new Accessory('scarf',        5),
+  new Accessory('bunny',        6),
+  new Accessory('bowtie',       7),
+  new Accessory('cape',         8),
 ];
 updatePanelMaxScroll();
 
