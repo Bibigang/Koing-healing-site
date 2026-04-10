@@ -268,6 +268,16 @@ class Pig {
         ctx.moveTo(ex2+er,ey-er*0.5); ctx.lineTo(ex2-er,ey+er*0.5);
         ctx.stroke();
       }
+    } else if (lightningFlash>0) {
+      ctx.strokeStyle='#442233'; ctx.lineWidth=Math.max(2.5,r*0.05);
+      // left eye >
+      ctx.beginPath();
+      ctx.moveTo(cx-ex-er,ey-er*0.9); ctx.lineTo(cx-ex+er,ey); ctx.lineTo(cx-ex-er,ey+er*0.9);
+      ctx.stroke();
+      // right eye <
+      ctx.beginPath();
+      ctx.moveTo(cx+ex+er,ey-er*0.9); ctx.lineTo(cx+ex-er,ey); ctx.lineTo(cx+ex+er,ey+er*0.9);
+      ctx.stroke();
     } else if (starEyeTimer>0) {
       starEyeTimer--;
       // blink: closed for 5 frames every 18 frames
