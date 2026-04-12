@@ -111,7 +111,13 @@ function getXY(e) { const t=e.changedTouches?e.changedTouches[0]:e; return [t.cl
 function checkPetting(x,y) {
   if (Math.hypot(x-pig.cx,y-(pig.cy-pig.r*0.55))<pig.r*0.45) {
     const moved=lastPetX!==null?Math.abs(x-lastPetX):0;
-    if (moved>3) pig.petLevel=Math.min(1,pig.petLevel+0.055);
+    if (moved>3) {
+      const before=pig.petLevel;
+      pig.petLevel=Math.min(1,pig.petLevel+0.055);
+      if (before<1&&pig.petLevel>=1&&!conditionPetBonusGiven) {
+        improveCondition(8); conditionPetBonusGiven=true;
+      }
+    }
     lastPetX=x;
   } else { lastPetX=null; }
 }
@@ -172,12 +178,12 @@ function onMove(x,y) {
     draggedFood.moveTo(x,y);
     if (draggedFood.type==='flower') {
       if (Math.hypot(x-pig.cx,y-(pig.cy+pig.r*0.2))<pig.r*0.48) {
-        pig.sniff(); showBubble('flower'); draggedFood.endDrag(); draggedFood=null;
+        pig.sniff(); showBubble('flower'); draggedFood.endDrag(); draggedFood=null; improveCondition(5);
       }
     } else {
       if (Math.hypot(x-pig.cx,y-(pig.cy+pig.r*0.2))<pig.r*0.5) {
         const _t=draggedFood.type; draggedFood.markEaten(); pig.eat(_t);
-        if (MSGS[_t]) showBubble(_t); draggedFood=null;
+        if (MSGS[_t]) showBubble(_t); draggedFood=null; improveCondition(20);
       }
     }
   } else { pig.pointerMove(x,y); }

@@ -231,9 +231,18 @@ class Pig {
     }
     const {cx,cy,r}=this;
     ctx.save();
-    ctx.globalAlpha=0.28+this.petLevel*0.38; ctx.fillStyle='#FF4477';
+    // 컨디션 80+ → 볼 홍조 더 진하게 + 노란 빛 더하기
+    const condBonus = pigCondition>=80 ? (pigCondition-80)/20*0.25 : 0;
+    ctx.globalAlpha=0.28+this.petLevel*0.38+condBonus; ctx.fillStyle='#FF4477';
     ctx.beginPath(); ctx.ellipse(cx-r*0.5,cy+r*0.06,r*0.13,r*0.09,0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx+r*0.5,cy+r*0.06,r*0.13,r*0.09,0,0,Math.PI*2); ctx.fill();
+    // 행복할 때 볼에 반짝이 점
+    if (pigCondition>=80) {
+      ctx.globalAlpha=(pigCondition-80)/20*0.7;
+      ctx.fillStyle='#FFD700';
+      ctx.beginPath(); ctx.arc(cx-r*0.44,cy+r*0.01,r*0.03,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+r*0.56,cy+r*0.01,r*0.03,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
     ctx.beginPath(); ctx.ellipse(cx,cy+r*0.2,r*0.33,r*0.23,0,0,Math.PI*2);
     ctx.fillStyle='#FFB3C6'; ctx.fill(); ctx.strokeStyle='#E896A8'; ctx.lineWidth=2; ctx.stroke();
@@ -339,6 +348,16 @@ class Pig {
         ctx.stroke();
       }
     }
+    // 컨디션 낮을 때 눈꺼풀 처짐 오버레이
+    if (pigCondition<=49 && this.eatTimer<=0 && lightningFlash<=0 && starEyeTimer<=0 && this.earDragIdx<0) {
+      const droopAmt = pigCondition<=19 ? 0.80 : 0.50;
+      ctx.fillStyle = pigCondition<=19 ? 'rgba(255,155,175,0.85)' : 'rgba(255,179,198,0.72)';
+      for (const sign of [-1,1]) {
+        ctx.beginPath();
+        ctx.ellipse(cx+sign*ex, ey-er*0.15, er*1.15, er*(droopAmt+0.2), 0, Math.PI, Math.PI*2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
   }
 
@@ -347,7 +366,11 @@ class Pig {
     const my=cy+r*0.44;
     ctx.save();
     ctx.lineWidth=Math.max(2,r*0.03); ctx.lineCap='round';
-    if (rainTimer>0) {
+    if (pigCondition<=19 && this.eatTimer<=0 && rainTimer<=0) {
+      // 지침 — 입꼬리 내려간 슬픈 입
+      ctx.strokeStyle='#BB5570';
+      ctx.beginPath(); ctx.arc(cx,my+r*0.06,r*0.13,Math.PI+0.35,-0.35,true); ctx.stroke();
+    } else if (rainTimer>0) {
       ctx.strokeStyle='#3366AA';
       ctx.beginPath(); ctx.arc(cx,my-r*0.04,r*0.1,0.15,Math.PI-0.15,true); ctx.stroke();
     } else if (this.eatTimer>0) {

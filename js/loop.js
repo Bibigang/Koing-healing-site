@@ -109,6 +109,8 @@
 
 // ── Speech Bubble ─────────────────────────────────────────
 const MSGS = {
+  _cond_low: ['배고파꼬잉...','보고싶었꼬잉...','밥 좀 줘꼬잉','기다렸꼬잉','힘이 없꼬잉...'],
+  _cond_high: ['오늘도 행복꼬잉 💕','최고꼬잉 ✨','기분 좋꼬잉','사랑받는 중꼬잉','완전 행복꼬잉 🌸'],
   flower: [
     '오늘도 버텼꼬잉','충분히 잘하고 있꼬잉','쉬어가도 되꼬잉','넌 원래 잘하고 있었꼬잉',
     '살아있는 거 자체가 성과꼬잉','이 정도면 잘한 거 맞꼬잉','숨만 쉬어도 잘하는 중꼬잉',
@@ -182,3 +184,6 @@ function showBubble(category) {
   if (_bubbleTimer) clearTimeout(_bubbleTimer);
   _bubbleTimer=setTimeout(()=>_bubbleEl.classList.remove('visible'),2600);
 }
+
+// 컨디션 로드 (showBubble 정의 후 실행)
+loadCondition();
